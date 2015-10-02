@@ -110,6 +110,10 @@ func init() {
 	if Notifyaction == nil {
 		panic("shitty notifyaction")
 	}
+	
+	ss := *Notifyaction
+	ss = ss[1:]
+	ss = ss[0:len(ss)-1]
 }
 
 func validateJson(content []byte) (*ServerConfig, error) {
