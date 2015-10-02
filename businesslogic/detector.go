@@ -137,7 +137,7 @@ func (opdetector *OPDetector) Run() {
 
 		if decision := VotingProc(urls, dcid, opdetector.config.Votinginterval); decision == -1 {
 			fmt.Println("datacenter announcement for " + dcid)
-			cmd := exec.Command("./faildc.py", dcid)
+			cmd := exec.Command(*utilities.Notifyaction, dcid)
 			var out bytes.Buffer
 			cmd.Stdout = &out
 			err := cmd.Run()

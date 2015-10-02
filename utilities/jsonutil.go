@@ -94,16 +94,21 @@ type ServerConfig struct {
 	Exposeconfig   ExposeConfig   `json:"exposeconfig"`
 	Detectorconfig Detectorconfig `json:"detectorconfig"`
 	Dbconfig       DBconfig       `json:"dbconfig"`
-	Numofwatchers  int            `json:"numofpeers"`
+	Numofwatchers  int            `json:"numofpeers"`	
 }
 
 var jsonfile *string
+var Notifyaction *string
 
 func init() {
 	log.Println("Inside init")
 	jsonfile = flag.String("jsonfile", "", "the json configuration file")
 	if jsonfile == nil {
-		panic("shitty json file")
+		panic("shitty jsonfile")
+	}
+	Notifyaction = flag.String("notifyaction", "", "a command to run as notification")
+	if Notifyaction == nil {
+		panic("shitty notifyaction")
 	}
 }
 
