@@ -1,0 +1,31 @@
+{
+	"exposeconfig" : {
+		"ovpexpose" : {
+				"watchdog_ovp_ip" : "127.0.0.1",
+				"watchdog_ovp_announceport" : 8201,
+				"watchdog_ovp_serfport" : 8101,
+				"watchdog_ovp_dcid" : "datacenter1"
+			},
+		"odpexpose" : {
+				"watchdog_odp_ip" : "127.0.0.1",
+				"watchdog_odp_voteport" : 8301,
+				"watchdog_odp_pingport" : 8401
+			}
+	},			
+	"dbconfig" : {
+		"mongourls" : ["127.0.0.1:27017"],		
+		"username" : "orbitadmin",
+		"password" : "orbitpwd"
+	},
+	"detectorconfig" : {
+		"updateinterval" : 1000,
+		"repinginterval" : 500,
+		"votinginterval" : 500,
+		"pingattempts" : {
+			"retries" : 5,
+			"timeout" : 100
+		}		
+	},
+	"numofpeers"	: 2
+}
+

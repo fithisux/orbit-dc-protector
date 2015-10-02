@@ -1,2 +1,2 @@
 # orbit-dc-protector
-A generic protector for datacenters
+A protector for orbit data centers
