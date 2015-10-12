@@ -56,7 +56,7 @@ func CreatePersistencyOVP(exposeconfig *ExposeConfig, aconfig *DBconfig) *Persis
 	p.Ovpdata = nil
 	p.dbconf = aconfig
 	p.createEndpoints()
-	p.InitializeOVP()
+	p.InitializeOVP(exposeconfig)
 	return p
 }
 
@@ -184,17 +184,17 @@ func (p *PersistencyLayer) SamplePeers() []OVPExpose {
 	return x
 }
 
-func (p *PersistencyLayer) InitializeOVP() {
+func (p *PersistencyLayer) InitializeOVP(exposeconfig *ExposeConfig) {
 	mySession := p.grabSession()
 	defer mySession.Close()
 	fmt.Println("searching for watchdogs in " + AuthDatabase)
 	collection := mySession.DB(AuthDatabase).C("watchdogs")
-	var characterization OVPData
+	characterization := new (OVPData)
 	fmt.Println("expose desc start")
 	fmt.Println("%+v", p.Ovpdata)
 	fmt.Println("expose desc stop")
 
-	if err := collection.Find(p.Ovpdata.OVPExpose).One(&characterization); err == nil {
+	if err := collection.Find(exposeconfig.Ovpexpose).One(&characterization); err == nil {
 		fmt.Println("found me")
 		fmt.Printf("at epoch %d \n", characterization.Epoch)
 		if characterization.Operating {
@@ -208,10 +208,16 @@ func (p *PersistencyLayer) InitializeOVP() {
 		}
 		p.Ovpdata.Epoch = characterization.Epoch
 	} else {
+		characterization.Epoch=1
+		characterization.Weight = 0
+		characterization.Operating = true
+		characterization.OVPExpose = exposeconfig.Ovpexpose
+		characterization.ODPExpose = exposeconfig.Odpexpose
+		p.Ovpdata=characterization
 		fmt.Println("error")
 		if err.Error() == mgo.ErrNotFound.Error() {
 			fmt.Println("not found me")
-			if err1 := collection.Insert(&p); err1 != nil {
+			if err1 := collection.Insert(characterization); err1 != nil {
 				panic("Cannot initialize epoch " + err1.Error())
 			}
 			fmt.Println("inserted")
