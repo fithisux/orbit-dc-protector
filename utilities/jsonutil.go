@@ -98,7 +98,7 @@ type ServerConfig struct {
 }
 
 var jsonfile *string
-var Notifyaction *string
+
 
 func init() {
 	log.Println("Inside init")
@@ -106,14 +106,6 @@ func init() {
 	if jsonfile == nil {
 		panic("shitty jsonfile")
 	}
-	Notifyaction = flag.String("notifyaction", "", "a command to run as notification")
-	if Notifyaction == nil {
-		panic("shitty notifyaction")
-	}
-	
-	ss := *Notifyaction
-	ss = ss[1:]
-	ss = ss[0:len(ss)-1]
 }
 
 func validateJson(content []byte) (*ServerConfig, error) {
