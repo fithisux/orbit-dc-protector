@@ -203,10 +203,10 @@ func (p *PersistencyLayer) InitializeOVP(exposeconfig *ExposeConfig) {
 		characterization.Epoch++
 		characterization.Weight = 0
 		characterization.Operating = true
+		p.Ovpdata=characterization
 		if err1 := collection.Update(p.Ovpdata.OVPExpose, &characterization); err1 != nil {
 			panic("Cannot update epoch while found " + err1.Error())
 		}
-		p.Ovpdata.Epoch = characterization.Epoch
 	} else {
 		characterization.Epoch=1
 		characterization.Weight = 0
