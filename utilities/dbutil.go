@@ -33,7 +33,6 @@ import (
 const (
 	MongoTimeout      = 60
 	AuthDatabase      = "orbitgoer"
-	Reservoircapacity = 5
 )
 
 type PersistencyLayer struct {
@@ -95,21 +94,6 @@ func (p *PersistencyLayer) createEndpoints() {
 	p.gigasession = mongoSession
 }
 
-func (p *PersistencyLayer) Changeweight(amount int) {
-	mySession := p.grabSession()
-	defer mySession.Close()
-	collection := mySession.DB(AuthDatabase).C("watchdogs")
-	change := mgo.Change{
-		Update:    bson.M{"$inc": bson.M{"watchdog_ovp_weight": amount}},
-		ReturnNew: true,
-	}
-	var characterization OVPData
-	_, err := collection.Find(p.Ovpdata.OVPExpose).Apply(change, &characterization)
-	if err != nil {
-		panic("Changeweight found no objects " + err.Error())
-	}
-}
-
 func (p *PersistencyLayer) Makefailed(expose *OVPExpose) {
 	mySession := p.grabSession()
 	defer mySession.Close()
@@ -147,42 +131,7 @@ func (p *PersistencyLayer) Describe() *OVPData {
 	return &characterization
 }
 
-func (p *PersistencyLayer) SamplePeers() []OVPExpose {
-	mySession := p.grabSession()
-	defer mySession.Close()
-	x := make([]OVPExpose, Reservoircapacity)
-	collection := mySession.DB(AuthDatabase).C("watchdogs")
-	var characterization OVPData
 
-	iter := collection.Find(bson.M{"watchdog_odp_dcid": p.Ovpdata.Dcid}).Iter()
-	counter := 0
-	index := 0
-	for iter.Next(&characterization) {
-		if characterization.OVPExpose != p.Ovpdata.OVPExpose {
-			index++
-			if counter < Reservoircapacity {
-				x[counter] = characterization.OVPExpose
-				counter++
-			} else {
-				j := rand.Intn(index)
-				j = j + 1
-				if j < Reservoircapacity {
-					x[j] = characterization.OVPExpose
-				}
-			}
-		}
-	}
-
-	if err := iter.Close(); err != nil {
-		panic("Sampling produced an error " + err.Error())
-	}
-
-	if counter < Reservoircapacity {
-		panic("Sampling produced insufficient elements")
-	}
-
-	return x
-}
 
 func (p *PersistencyLayer) InitializeOVP(exposeconfig *ExposeConfig) {
 	mySession := p.grabSession()
@@ -201,7 +150,6 @@ func (p *PersistencyLayer) InitializeOVP(exposeconfig *ExposeConfig) {
 			panic("Cannot initialize operating")
 		}
 		characterization.Epoch++
-		characterization.Weight = 0
 		characterization.Operating = true
 		p.Ovpdata=characterization
 		if err1 := collection.Update(p.Ovpdata.OVPExpose, &characterization); err1 != nil {
@@ -209,7 +157,6 @@ func (p *PersistencyLayer) InitializeOVP(exposeconfig *ExposeConfig) {
 		}
 	} else {
 		characterization.Epoch=1
-		characterization.Weight = 0
 		characterization.Operating = true
 		characterization.OVPExpose = exposeconfig.Ovpexpose
 		characterization.ODPExpose = exposeconfig.Odpexpose
@@ -253,26 +200,38 @@ func (p *PersistencyLayer) InitializeODP(exposeconfig *ExposeConfig) {
 func (p *PersistencyLayer) GetOVPPeers(bound int) []OVPExpose {
 	mySession := p.grabSession()
 	defer mySession.Close()
+	x := make([]OVPExpose, bound)
 	collection := mySession.DB(AuthDatabase).C("watchdogs")
-	var servers []OVPData
-	if err := collection.Find(bson.M{"watchdog_odp_dcid": p.Ovpdata.Dcid}).Sort("-watchdog_weight").All(&servers); err != nil {
-		panic("general error at ovptargets")
-	} else {
-		counter := 0
-		watchers := make([]OVPExpose, bound)
-		for i := 0; i < len(servers); i++ {
-			fmt.Println("OVP targets")
-			if (servers[i].OVPExpose != p.Ovpdata.OVPExpose) && (counter < len(watchers)) {
-				fmt.Println("Watched by %+v", servers[i].OVPExpose)
-				watchers[counter] = servers[i].OVPExpose
+	var characterization OVPData
+
+	iter := collection.Find(bson.M{"watchdog_odp_dcid": p.Ovpdata.Dcid}).Iter()
+	counter := 0
+	index := 0
+	for iter.Next(&characterization) {
+		if characterization.OVPExpose != p.Ovpdata.OVPExpose && characterization.Operating{
+			index++
+			if counter < bound {
+				x[counter] = characterization.OVPExpose
 				counter++
+			} else {
+				j := rand.Intn(index)
+				j = j + 1
+				if j < bound {
+					x[j] = characterization.OVPExpose
+				}
 			}
 		}
-		if counter < len(watchers) {
-			panic("not much pingers")
-		}
-		return watchers
 	}
+
+	if err := iter.Close(); err != nil {
+		panic("Sampling produced an error " + err.Error())
+	}
+
+	if counter < bound {
+		panic("Sampling produced insufficient elements")
+	}
+
+	return x
 }
 
 func (p *PersistencyLayer) GetODPPeers(dcid string) []OVPData {

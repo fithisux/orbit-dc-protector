@@ -61,7 +61,6 @@ func (oe *OVPExpose) Name() string{
 
 type OVPData struct {
 	OVPExpose `bson:",inline"`
-	Weight    int  `bson:"watchdog_ovp_weight" json:"watchdog_ovp_weight"`
 	Epoch     int  `bson:"watchdog_ovp_epoch" json:"watchdog_ovp_epoch"`
 	Operating bool `bson:"watchdog_ovp_operating" json:"watchdog_ovp_operating"`
 	ODPExpose `bson:",inline"`
