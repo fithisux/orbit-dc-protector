@@ -204,7 +204,7 @@ func (p *PersistencyLayer) GetOVPPeers(bound int) []OVPExpose {
 	collection := mySession.DB(AuthDatabase).C("watchdogs")
 	var characterization OVPData
 
-	iter := collection.Find(bson.M{"watchdog_odp_dcid": p.Ovpdata.Dcid}).Iter()
+	iter := collection.Find(bson.M{"watchdog_ovp_dcid": p.Ovpdata.Dcid}).Iter()
 	counter := 0
 	index := 0
 	for iter.Next(&characterization) {
