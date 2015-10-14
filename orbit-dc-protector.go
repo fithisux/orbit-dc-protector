@@ -23,7 +23,7 @@ package main
 import (
 	"github.com/emicklei/go-restful"
 	"github.com/fithisux/gopinger/pinglogic"
-	"github.com/fithisux/orbit-dc-protector/businesslogic"
+	"github.com/fithisux/orbit-dc-protector/dcprotection"
 	"github.com/fithisux/orbit-dc-protector/utilities"
 	"log"
 	"net"
@@ -31,7 +31,7 @@ import (
 	"strconv"
 )
 
-var detector *businesslogic.OPDetector
+var detector *dcprotection.OPDetector
 
 func dcprotector_opinion(request *restful.Request, response *restful.Response) { //stop a stream
 	log.Printf("Inside dcprotector_opinion")
@@ -51,8 +51,8 @@ func main() {
 	}
 	go pinglogic.Passive(ra)
 
-	odpu := businesslogic.CreateODPupdater(conf)
-	detector = businesslogic.CreateOPDetector(ra, odpu, &conf.Detectorconfig)
+	odpu := dcprotection.CreateODPupdater(conf)
+	detector = dcprotection.CreateOPDetector(ra, odpu, &conf.Detectorconfig)
 	go detector.Run()
 	wsContainer := restful.NewContainer()
 	log.Printf("Registering")
@@ -75,6 +75,6 @@ func main() {
 	*/
 
 	log.Printf("start listening on localhost:%d\n", conf.Exposeconfig.Odpexpose.Voteport)
-	server := &http.Server{Addr: ":" + strconv.Itoa(conf.Exposeconfig.Odpexpose.Voteport), Handler: wsContainer}
+	server := &http.Server{Addr: conf.Exposeconfig.Ovpexpose.Ovip + ":" + strconv.Itoa(conf.Exposeconfig.Odpexpose.Voteport), Handler: wsContainer}
 	log.Fatal(server.ListenAndServe())
 }
