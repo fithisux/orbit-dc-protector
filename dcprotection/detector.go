@@ -100,7 +100,7 @@ func (opdetector *OPDetector) Run() {
 	}()
 
 	continuousdown := false
-	start := time.Now()
+	startsuspicion := time.Now()
 	for {
 		mustwait := false
 		state.mu.Lock()
@@ -113,7 +113,11 @@ func (opdetector *OPDetector) Run() {
 			continue
 		}
 
+		startping := time.Now()
 		alive := pinger.isAlive()
+		elapsedping := time.Since(startping)
+		fmt.Printf("Elapsed ping : %s\n",elapsedping)
+			
 		state.mu.Lock()
 		state.Alive = alive
 		state.mu.Unlock()
@@ -125,7 +129,7 @@ func (opdetector *OPDetector) Run() {
 		} else {
 			fmt.Println("we are down")
 			if !continuousdown {
-				start = time.Now()
+				startsuspicion = time.Now()
 				continuousdown = true
 			}
 		}
@@ -153,8 +157,8 @@ func (opdetector *OPDetector) Run() {
 			state.mu.Lock()
 			state.Parked = true
 			state.mu.Unlock()
-			elapsed := time.Since(start)
-			fmt.Printf("Elapsed : %s\n",elapsed)
+			elapsedsuspicion := time.Since(startsuspicion)
+			fmt.Printf("Elapsed suspicion : %s\n",elapsedsuspicion)
 		} else {
 			fmt.Println("We are undecided")
 			continue //undecided
