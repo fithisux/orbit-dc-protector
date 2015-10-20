@@ -99,6 +99,8 @@ func (opdetector *OPDetector) Run() {
 		}
 	}()
 
+	continuousdown := false
+	start := time.Now()
 	for {
 		mustwait := false
 		state.mu.Lock()
@@ -118,12 +120,16 @@ func (opdetector *OPDetector) Run() {
 		if alive {
 			fmt.Println("we are alive")
 			time.Sleep(opdetector.config.Repinginterval)
+			continuousdown = false
 			continue
 		} else {
 			fmt.Println("we are down")
-			//os.Exit(0)
+			if !continuousdown {
+				start = time.Now()
+				continuousdown = true
+			}
 		}
-
+		
 		fmt.Println("create voters")
 		state.mu.Lock()
 		urls = make([]string, len(state.Workingdbview.Voters))
@@ -147,6 +153,8 @@ func (opdetector *OPDetector) Run() {
 			state.mu.Lock()
 			state.Parked = true
 			state.mu.Unlock()
+			elapsed := time.Since(start)
+			fmt.Printf("Elapsed : %s\n",elapsed)
 		} else {
 			fmt.Println("We are undecided")
 			continue //undecided
