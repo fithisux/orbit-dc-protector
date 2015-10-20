@@ -128,7 +128,7 @@ func (opdetector *OPDetector) Run() {
 		state.mu.Lock()
 		urls = make([]string, len(state.Workingdbview.Voters))
 		for i := 0; i < len(urls); i++ {
-			urls[i] = "http://" + state.Workingdbview.Voters[i].Odip + ":" + strconv.Itoa(state.Workingdbview.Voters[i].Voteport)
+			urls[i] = "http://" + state.Workingdbview.Voters[i].Ovip + ":" + strconv.Itoa(state.Workingdbview.Voters[i].Voteport)
 			urls[i] += "/dcprotector/opinion"
 		}
 		dcid = state.Workingdbview.Dcid
