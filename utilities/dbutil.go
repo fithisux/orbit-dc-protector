@@ -41,19 +41,19 @@ type PersistencyLayer struct {
 	Ovpdata     *OVPData
 }
 
-func CreatePersistencyODP(exposeconfig *ExposeConfig, aconfig *DBconfig) *PersistencyLayer {
+func CreatePersistencyODP(exposeconfig *ExposeConfig, dbconf *DBconfig) *PersistencyLayer {
 	p := new(PersistencyLayer)
 	p.Ovpdata = nil
-	p.dbconf = aconfig
+	p.dbconf = dbconf
 	p.createEndpoints()
 	p.InitializeODP(exposeconfig)
 	return p
 }
 
-func CreatePersistencyOVP(exposeconfig *ExposeConfig, aconfig *DBconfig) *PersistencyLayer {
+func CreatePersistencyOVP(exposeconfig *ExposeConfig, dbconf *DBconfig) *PersistencyLayer {
 	p := new(PersistencyLayer)
 	p.Ovpdata = nil
-	p.dbconf = aconfig
+	p.dbconf = dbconf
 	p.createEndpoints()
 	p.InitializeOVP(exposeconfig)
 	return p
