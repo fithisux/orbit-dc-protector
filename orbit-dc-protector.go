@@ -21,17 +21,18 @@ If you have questions concerning this license or the applicable additional terms
 package main
 
 import (
-	"github.com/emicklei/go-restful"
-	"github.com/fithisux/gopinger/pinglogic"
-	"github.com/fithisux/orbit-dc-protector/dcprotection"
-	"github.com/fithisux/orbit-dc-protector/utilities"
 	"log"
 	"net"
 	"net/http"
 	"strconv"
+
+	"github.com/emicklei/go-restful"
+	"github.com/fithisux/gopinger/pinglogic"
+	"github.com/fithisux/orbit-dc-protector/dcprotection"
+	"github.com/fithisux/orbit-dc-protector/utilities"
 )
 
-var detector *dcprotection.OPDetector
+var detector *dcprotection.ODPdetector
 
 func dcprotector_opinion(request *restful.Request, response *restful.Response) { //stop a stream
 	log.Printf("Inside dcprotector_opinion")
@@ -51,8 +52,8 @@ func main() {
 	}
 	go pinglogic.Passive(ra)
 
-	odpu := dcprotection.CreateODPupdater(conf)
-	detector = dcprotection.CreateOPDetector(ra, odpu, &conf.Detectorconfig)
+	landscapeupdater := dcprotection.CreateLandscapeupdater(conf)
+	detector = dcprotection.CreateODPdetector(ra, landscapeupdater, &conf.Detectorconfig)
 	go detector.Run()
 	wsContainer := restful.NewContainer()
 	log.Printf("Registering")

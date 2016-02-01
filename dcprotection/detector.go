@@ -1,26 +1,26 @@
 package dcprotection
 
 import (
-	"sync"
 	"bytes"
 	"fmt"
+	"net"
+	"sync"
+
 	"github.com/fithisux/gopinger/pinglogic"
 	"github.com/fithisux/orbit-dc-protector/utilities"
-	"net"
 	//"os"
 	"os/exec"
 	"strconv"
 	"time"
 )
 
-type PasedDetectorconfig struct {
-	Pingattempts   *pinglogic.TimedAttempts
-	Updateinterval time.Duration
-	Repinginterval time.Duration
-	Votinginterval time.Duration
-	Me             *net.UDPAddr
+type ParsedDetectorconfig struct {
+	Pingattempts            *pinglogic.TimedAttempts
+	Landscapeupdateinterval time.Duration
+	Repinginterval          time.Duration
+	Votingtimeout           time.Duration
+	Detectoraddress         *net.UDPAddr
 }
-
 
 type DetectorStatus struct {
 	Dcid   string
@@ -30,71 +30,71 @@ type DetectorStatus struct {
 
 type DetectorState struct {
 	DetectorStatus
-	odpu          *ODPupdater
-	Workingdbview *DBView
-	mu            sync.Mutex
+	landcsapeupdater *Landscapeupdater
+	dbview           *DBView
+	mutex            sync.Mutex
 }
 
-type OPDetector struct {
+type ODPdetector struct {
 	state  *DetectorState
-	config *PasedDetectorconfig
+	config *ParsedDetectorconfig
 	pinger *Pingagent
 }
 
-func CreateOPDetector(ra *net.UDPAddr, odpu *ODPupdater, detectorconfig *utilities.Detectorconfig) *OPDetector {
-	opd := new(OPDetector)
-	opd.state = new(DetectorState)
-	opd.state.Parked = true //explicit
-	opd.state.Alive = true  //explicit
-	opd.state.Dcid = ""     //explicit
-	opd.state.odpu = odpu
-	opd.config = new(PasedDetectorconfig)
-	opd.config.Updateinterval = odpu.updateinterval
-	opd.config.Repinginterval = time.Duration(detectorconfig.Repinginterval) * time.Millisecond
-	opd.config.Votinginterval = time.Duration(detectorconfig.Votinginterval) * time.Millisecond
+func CreateODPdetector(detectoraddress *net.UDPAddr, landscapeupdater *Landscapeupdater, detectorconfig *utilities.Detectorconfig) *ODPdetector {
+	odpdetector := new(ODPdetector)
+	odpdetector.state = new(DetectorState)
+	odpdetector.state.Parked = true //explicit
+	odpdetector.state.Alive = true  //explicit
+	odpdetector.state.Dcid = ""     //explicit
+	odpdetector.state.landcsapeupdater = landscapeupdater
+	odpdetector.config = new(ParsedDetectorconfig)
+	odpdetector.config.Landscapeupdateinterval = landscapeupdater.updateinterval
+	odpdetector.config.Repinginterval = time.Duration(detectorconfig.Repinginterval) * time.Millisecond
+	odpdetector.config.Votingtimeout = time.Duration(detectorconfig.Votinginterval) * time.Millisecond
 	tempdur := time.Duration(detectorconfig.Pingattempts.Timeout) * time.Millisecond
-	opd.config.Pingattempts = &pinglogic.TimedAttempts{tempdur, detectorconfig.Pingattempts.Retries}
-	opd.config.Me = ra
-	return opd
+	odpdetector.config.Pingattempts = &pinglogic.TimedAttempts{tempdur, detectorconfig.Pingattempts.Retries}
+	odpdetector.config.Detectoraddress = detectoraddress
+	return odpdetector
 }
 
-func (opdetector *OPDetector) GetOpinion() *DetectorStatus {
+func (opdetector *ODPdetector) GetOpinion() *DetectorStatus {
 	opinion := new(DetectorStatus)
-	opdetector.state.mu.Lock()
+	opdetector.state.mutex.Lock()
 	*opinion = opdetector.state.DetectorStatus
-	opdetector.state.mu.Unlock()
+	opdetector.state.mutex.Unlock()
 	return opinion
 }
 
-func (opdetector *OPDetector) Run() {
-	pinger := CreatePingAgent(opdetector.config.Me, opdetector.config.Repinginterval, opdetector.config.Pingattempts)
+func (opdetector *ODPdetector) Run() {
+	pinger := CreatePingAgent(opdetector.config.Detectoraddress, opdetector.config.Repinginterval, opdetector.config.Pingattempts)
 	state := opdetector.state
 
 	var urls []string
 	var dcid string
 
 	go func() {
-		for somedbview := range state.odpu.Updates {
-			state.mu.Lock()
+		for somedbview := range state.landcsapeupdater.Dbupdates {
+			state.mutex.Lock()
 			if state.Parked {
 				if somedbview.Dcid != "" {
-					if (state.Workingdbview == nil) || (state.Workingdbview.Dcid != somedbview.Dcid) {
-						state.Workingdbview = somedbview
+					if (state.dbview == nil) || (state.dbview.Dcid != somedbview.Dcid) {
+						state.dbview = somedbview
 						state.Parked = false
 						state.Dcid = somedbview.Dcid
 						state.Alive = true
-						pinger.updating_chan <- state.Workingdbview.Pingers
+						pinger.updating_chan <- state.dbview.Pingers
 					}
 				}
 			} else {
-				if state.Workingdbview.Dcid == somedbview.Dcid {
-					state.Workingdbview = somedbview
-					pinger.updating_chan <- state.Workingdbview.Pingers
+				if state.dbview.Dcid == somedbview.Dcid {
+					state.dbview = somedbview
+					pinger.updating_chan <- state.dbview.Pingers
 				} else {
 					panic("change dst datacenter while not parked")
 				}
 			}
-			state.mu.Unlock()
+			state.mutex.Unlock()
 
 		}
 	}()
@@ -103,24 +103,24 @@ func (opdetector *OPDetector) Run() {
 	startsuspicion := time.Now()
 	for {
 		mustwait := false
-		state.mu.Lock()
+		state.mutex.Lock()
 		mustwait = state.Parked
-		state.mu.Unlock()
+		state.mutex.Unlock()
 
 		if mustwait {
 			fmt.Println("we are parked")
-			time.Sleep(opdetector.config.Updateinterval)
+			time.Sleep(opdetector.config.Landscapeupdateinterval)
 			continue
 		}
 
 		startping := time.Now()
 		alive := pinger.isAlive()
 		elapsedping := time.Since(startping)
-		fmt.Printf("Elapsed ping : %s\n",elapsedping)
-			
-		state.mu.Lock()
+		fmt.Printf("Elapsed ping : %s\n", elapsedping)
+
+		state.mutex.Lock()
 		state.Alive = alive
-		state.mu.Unlock()
+		state.mutex.Unlock()
 		if alive {
 			fmt.Println("we are alive")
 			time.Sleep(opdetector.config.Repinginterval)
@@ -133,19 +133,19 @@ func (opdetector *OPDetector) Run() {
 				continuousdown = true
 			}
 		}
-		
+
 		fmt.Println("create voters")
-		state.mu.Lock()
-		urls = make([]string, len(state.Workingdbview.Voters))
+		state.mutex.Lock()
+		urls = make([]string, len(state.dbview.Voters))
 		for i := 0; i < len(urls); i++ {
-			urls[i] = "http://" + state.Workingdbview.Voters[i].Ovip + ":" + strconv.Itoa(state.Workingdbview.Voters[i].Voteport)
+			urls[i] = "http://" + state.dbview.Voters[i].Ovip + ":" + strconv.Itoa(state.dbview.Voters[i].Voteport)
 			urls[i] += "/dcprotector/opinion"
 		}
-		dcid = state.Workingdbview.Dcid
-		state.mu.Unlock()
+		dcid = state.dbview.Dcid
+		state.mutex.Unlock()
 		fmt.Println("voters created")
 
-		if decision := VotingProc(urls, dcid, opdetector.config.Votinginterval); decision == -1 {
+		if decision := VotingProc(urls, dcid, opdetector.config.Votingtimeout); decision == -1 {
 			fmt.Println("datacenter announcement for " + dcid)
 			cmd := exec.Command("./faildc", dcid)
 			var out bytes.Buffer
@@ -154,11 +154,11 @@ func (opdetector *OPDetector) Run() {
 			if err != nil {
 				fmt.Println("Notified? " + err.Error())
 			}
-			state.mu.Lock()
+			state.mutex.Lock()
 			state.Parked = true
-			state.mu.Unlock()
+			state.mutex.Unlock()
 			elapsedsuspicion := time.Since(startsuspicion)
-			fmt.Printf("Elapsed suspicion : %s\n",elapsedsuspicion)
+			fmt.Printf("Elapsed suspicion : %s\n", elapsedsuspicion)
 		} else {
 			fmt.Println("We are undecided")
 			continue //undecided

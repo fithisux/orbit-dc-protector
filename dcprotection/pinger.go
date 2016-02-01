@@ -2,66 +2,66 @@ package dcprotection
 
 import (
 	"fmt"
-	"github.com/fithisux/gopinger/pinglogic"
 	"net"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/fithisux/gopinger/pinglogic"
 	"github.com/fithisux/orbit-dc-protector/utilities"
 )
 
 type Pingagent struct {
 	updating_chan chan []utilities.OVPData
-	Me            *net.UDPAddr
+	Pingeraddress *net.UDPAddr
 	conf          *pinglogic.TimedAttempts
-	Mu            sync.Mutex
+	mutex         sync.Mutex
 	Repinging     time.Duration
-	pinged        []*net.UDPAddr
+	pingtargets   []*net.UDPAddr
 }
 
-func CreatePingAgent(me *net.UDPAddr, repinging time.Duration, conf *pinglogic.TimedAttempts) *Pingagent {
-	pa := new(Pingagent)
-	pa.pinged = nil
-	pa.Me = me
-	pa.updating_chan = make(chan []utilities.OVPData)
-	pa.conf = conf
-	pa.Repinging = repinging
-	go ping_them(pa)
-	return pa
+func CreatePingAgent(pingeraddress *net.UDPAddr, repinging time.Duration, conf *pinglogic.TimedAttempts) *Pingagent {
+	pingagent := new(Pingagent)
+	pingagent.pingtargets = nil
+	pingagent.Pingeraddress = pingeraddress
+	pingagent.updating_chan = make(chan []utilities.OVPData)
+	pingagent.conf = conf
+	pingagent.Repinging = repinging
+	go ping_them(pingagent)
+	return pingagent
 }
 
-func (pa *Pingagent) isAlive() bool {
+func (pingagent *Pingagent) isAlive() bool {
 
-	var pinged []*net.UDPAddr
-	pa.Mu.Lock()
-	pinged = pa.pinged
-	pa.Mu.Unlock()
-	if pinged != nil || len(pinged) > 0 {
+	var pingtargets []*net.UDPAddr
+	pingagent.mutex.Lock()
+	pingtargets = pingagent.pingtargets
+	pingagent.mutex.Unlock()
+	if pingtargets != nil || len(pingtargets) > 0 {
 		fmt.Println("Liveness check")
-		_, ok := pinglogic.Active(pa.conf, pa.Me, pinged)
-		return ok
+		_, ok := pinglogic.Active(pingagent.conf, pingagent.Pingeraddress, pingtargets)
+		return len(ok.Answers) != 0
 	} else {
 		return false
 	}
 }
 
-func ping_them(pa *Pingagent) {
-
-	for lista := range pa.updating_chan {
-		pinged := make([]*net.UDPAddr, len(lista))
+func ping_them(pingagent *Pingagent) {
+	for lista := range pingagent.updating_chan {
+		pingtargets := make([]*net.UDPAddr, len(lista))
 		counter := 0
 		for _, ovpdata := range lista {
 			addressa := ovpdata.Odip + ":" + strconv.Itoa(ovpdata.Pingport)
 			ra, err := net.ResolveUDPAddr("udp", addressa)
 			//fmt.Println("Ping update on " + addressa)
 			if err == nil {
-				pinged[counter] = ra
+				pingtargets[counter] = ra
 				counter++
 			}
 		}
-		pinged = pinged[:counter]
-		pa.Mu.Lock()
-		pa.pinged = pinged
-		pa.Mu.Unlock()
+		pingtargets = pingtargets[:counter]
+		pingagent.mutex.Lock()
+		pingagent.pingtargets = pingtargets
+		pingagent.mutex.Unlock()
 	}
 }

@@ -34,9 +34,6 @@ type ODPRoute struct {
 	Dst string `bson:"route_odp_dst"`
 }
 
-
-
-
 type ODPExpose struct {
 	Odip     string `bson:"watchdog_odp_ip" json:"watchdog_odp_ip"`
 	Voteport int    `bson:"watchdog_odp_voteport" json:"watchdog_odp_voteport"`
@@ -50,21 +47,21 @@ type OVPExpose struct {
 	Dcid         string `bson:"watchdog_ovp_dcid" json:"watchdog_ovp_dcid"`
 }
 
-func (oe *OVPExpose) Name() string{
-	bb,err:=json.Marshal(oe)
+func (oe *OVPExpose) Name() string {
+	bb, err := json.Marshal(oe)
 	if err != nil {
 		panic(err)
-	} 
-	
+	}
+
 	return string(bb)
 }
 
-
 type OVPData struct {
-	OVPExpose `bson:",inline"`
-	Epoch     int  `bson:"watchdog_ovp_epoch" json:"watchdog_ovp_epoch"`
-	Operating bool `bson:"watchdog_ovp_operating" json:"watchdog_ovp_operating"`
-	ODPExpose `bson:",inline"`
+	OVPExpose    `bson:",inline"`
+	Epoch        int  `bson:"watchdog_ovp_epoch" json:"watchdog_ovp_epoch"`
+	Operating    bool `bson:"watchdog_ovp_operating" json:"watchdog_ovp_operating"`
+	Dcprotecting bool `bson:"watchdog_ovp_dcprotecting" json:"watchdog_ovp_dcprotecting"`
+	ODPExpose    `bson:",inline"`
 }
 
 type OrbitAttempts struct {
@@ -94,11 +91,10 @@ type ServerConfig struct {
 	Exposeconfig   ExposeConfig   `json:"exposeconfig"`
 	Detectorconfig Detectorconfig `json:"detectorconfig"`
 	Dbconfig       DBconfig       `json:"dbconfig"`
-	Numofwatchers  int            `json:"numofpeers"`	
+	Numofwatchers  int            `json:"numofpeers"`
 }
 
 var jsonfile *string
-
 
 func init() {
 	log.Println("Inside init")

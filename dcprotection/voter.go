@@ -10,7 +10,7 @@ type Datacentergallop struct {
 	Datacenter string `json:"Datacenter"`
 }
 
-func VotingProc(urls []string, datacenter string, votinginterval time.Duration) int {
+func VotingProc(urls []string, datacenter string, votingtimeout time.Duration) int {
 	if len(urls) == 0 {
 		return -1
 	}
@@ -21,16 +21,16 @@ func VotingProc(urls []string, datacenter string, votinginterval time.Duration) 
 	}
 
 	decision := 0
-	c := make(chan Respondingdata)
+	responses := make(chan Respondingdata)
 	for _, url := range urls {
 		fmt.Println("Request vote from " + url)
-		go SendToPartner(url, reqbody, votinginterval, c)
+		go SendToPartner(url, reqbody, votingtimeout, responses)
 	}
 	building := -1 //i know you are dead
 	candidates := 1
 	opinion := new(DetectorStatus)
 	counter := 0
-	for resus := range c {
+	for resus := range responses {
 		fmt.Println("received something")
 		if resus.Failure == nil {
 			fmt.Println("received correct")
@@ -55,7 +55,7 @@ func VotingProc(urls []string, datacenter string, votinginterval time.Duration) 
 		}
 	}
 
-	close(c)
+	close(responses)
 
 	active := 1 + ((len(urls) + 1) / 2)
 

@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"golang.org/x/net/context"
 	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
+
+	"golang.org/x/net/context"
 )
 
 var (
@@ -71,7 +72,7 @@ func work(url string, reqbody []byte, ctx context.Context, respbody chan Respond
 			respbody <- Respondingdata{err, nil}
 			return
 		}
-		fmt.Println("tight")
+		fmt.Println("Non error")
 		defer resp.Body.Close()
 		out, _ := ioutil.ReadAll(resp.Body)
 		fmt.Printf("Server Response: %s\n", out)

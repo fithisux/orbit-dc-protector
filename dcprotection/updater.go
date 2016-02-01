@@ -23,8 +23,8 @@ package dcprotection
 import (
 	"fmt"
 	"time"
+
 	"github.com/fithisux/orbit-dc-protector/utilities"
-	
 )
 
 type DBView struct {
@@ -34,42 +34,49 @@ type DBView struct {
 	Voters  []utilities.OVPData
 }
 
-type ODPupdater struct {
-	persistence    *utilities.PersistencyLayer
-	updateinterval time.Duration
-	Updates        chan *DBView
+type Landscapeupdater struct {
+	persistencylayer *utilities.PersistencyLayer
+	updateinterval   time.Duration
+	Dbupdates        chan *DBView
+	ovpdata          *utilities.OVPData
 }
 
-func CreateODPupdater(conf *utilities.ServerConfig) *ODPupdater {
-	odpu := new(ODPupdater)
-	odpu.persistence = utilities.CreatePersistencyODP(&conf.Exposeconfig, &conf.Dbconfig)
-	odpu.updateinterval = time.Duration(conf.Detectorconfig.Updateinterval) * time.Millisecond
-	odpu.Updates = make(chan *DBView)
+func CreateLandscapeupdater(conf *utilities.ServerConfig) *Landscapeupdater {
+	landscapeupdater := new(Landscapeupdater)
+	landscapeupdater.persistencylayer = utilities.CreatePersistencyLayer(&conf.Dbconfig)
+	landscapeupdater.ovpdata = landscapeupdater.persistencylayer.InitializeODP(&conf.Exposeconfig)
+	landscapeupdater.updateinterval = time.Duration(conf.Detectorconfig.Updateinterval) * time.Millisecond
+	landscapeupdater.Dbupdates = make(chan *DBView)
 
-	p := odpu.persistence
 	go func() {
-		ticker := time.NewTicker(odpu.updateinterval)
+		ticker := time.NewTicker(landscapeupdater.updateinterval)
 		for {
 			select {
 			case <-ticker.C:
 				{
 					fmt.Println("Updating")
-
-					p.Describe()
 					var pingers []utilities.OVPData = nil
 					var voters []utilities.OVPData = nil
-
-					dst := p.GetRoute()
+					dst := landscapeupdater.persistencylayer.GetRoute(landscapeupdater.ovpdata.Dcid)
 					//fmt.Println("Got dst "+dst)
 					if dst != "" {
-						pingers = p.GetODPPeers(dst)
-						voters = p.GetODPPeers(p.Ovpdata.Dcid)
+						pingers = landscapeupdater.persistencylayer.GetODPPeers(dst)
+						resultset := landscapeupdater.persistencylayer.GetODPPeers(landscapeupdater.ovpdata.Dcid)
+						voters = make([]utilities.OVPData, len(resultset))
+						index := 0
+						for i := 0; i < len(voters); i++ {
+							if resultset[i].OVPExpose != landscapeupdater.ovpdata.OVPExpose {
+								voters[index] = resultset[i]
+								index++
+							}
+						}
+						voters = voters[:index]
 					}
-					odpu.Updates <- &DBView{dst, p.Ovpdata, pingers, voters}
-					ticker = time.NewTicker(odpu.updateinterval)
+					landscapeupdater.Dbupdates <- &DBView{dst, landscapeupdater.ovpdata, pingers, voters}
+					ticker = time.NewTicker(landscapeupdater.updateinterval)
 				}
 			}
 		}
 	}()
-	return odpu
+	return landscapeupdater
 }
