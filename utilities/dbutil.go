@@ -138,7 +138,7 @@ func (p *PersistencyLayer) InitializeOVP(exposeconfig *ExposeConfig) *OVPData {
 	return ovpdata
 }
 
-func (p *PersistencyLayer) InitializeODP(exposeconfig *ExposeConfig) *OVPData {
+func (p *PersistencyLayer) InitializeODP(exposeconfig *ExposeConfig) *OVPData {	
 	if ovpdata := p.Describe(exposeconfig); ovpdata != nil {
 		if !ovpdata.Operating {
 			panic("operating == false")

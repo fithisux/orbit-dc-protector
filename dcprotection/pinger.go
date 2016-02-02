@@ -15,10 +15,11 @@ type Pingagent struct {
 	updating_chan chan []utilities.OVPData
 	Pingeraddress *net.UDPAddr
 	conf          *pinglogic.TimedAttempts
-	mutex         sync.Mutex
 	Repinging     time.Duration
 	pingtargets   []*net.UDPAddr
 }
+
+var pingagentmutex sync.Mutex
 
 func CreatePingAgent(pingeraddress *net.UDPAddr, repinging time.Duration, conf *pinglogic.TimedAttempts) *Pingagent {
 	pingagent := new(Pingagent)
@@ -34,9 +35,9 @@ func CreatePingAgent(pingeraddress *net.UDPAddr, repinging time.Duration, conf *
 func (pingagent *Pingagent) isAlive() bool {
 
 	var pingtargets []*net.UDPAddr
-	pingagent.mutex.Lock()
+	pingagentmutex.Lock()
 	pingtargets = pingagent.pingtargets
-	pingagent.mutex.Unlock()
+	pingagentmutex.Unlock()
 	if pingtargets != nil || len(pingtargets) > 0 {
 		fmt.Println("Liveness check")
 		_, ok := pinglogic.Active(pingagent.conf, pingagent.Pingeraddress, pingtargets)
@@ -60,8 +61,8 @@ func ping_them(pingagent *Pingagent) {
 			}
 		}
 		pingtargets = pingtargets[:counter]
-		pingagent.mutex.Lock()
+		pingagentmutex.Lock()
 		pingagent.pingtargets = pingtargets
-		pingagent.mutex.Unlock()
+		pingagentmutex.Unlock()
 	}
 }

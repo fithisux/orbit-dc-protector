@@ -36,7 +36,7 @@ func VotingProc(urls []string, datacenter string, votingtimeout time.Duration) i
 			fmt.Println("received correct")
 			if err := json.Unmarshal(resus.Data, opinion); err == nil {
 				if opinion.Dcid == datacenter {
-					if opinion.Alive {
+					if opinion.Aliveopinion {
 						building++
 					} else {
 						building--

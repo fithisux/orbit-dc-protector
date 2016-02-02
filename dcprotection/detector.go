@@ -23,17 +23,18 @@ type ParsedDetectorconfig struct {
 }
 
 type DetectorStatus struct {
-	Dcid   string
-	Alive  bool
-	Parked bool
+	Dcid         string
+	Aliveopinion bool
+	Parked       bool
 }
 
 type DetectorState struct {
 	DetectorStatus
 	landcsapeupdater *Landscapeupdater
 	dbview           *DBView
-	mutex            sync.Mutex
 }
+
+var odpmutex sync.Mutex
 
 type ODPdetector struct {
 	state  *DetectorState
@@ -44,9 +45,9 @@ type ODPdetector struct {
 func CreateODPdetector(detectoraddress *net.UDPAddr, landscapeupdater *Landscapeupdater, detectorconfig *utilities.Detectorconfig) *ODPdetector {
 	odpdetector := new(ODPdetector)
 	odpdetector.state = new(DetectorState)
-	odpdetector.state.Parked = true //explicit
-	odpdetector.state.Alive = true  //explicit
-	odpdetector.state.Dcid = ""     //explicit
+	odpdetector.state.Parked = true       //explicit
+	odpdetector.state.Aliveopinion = true //explicit
+	odpdetector.state.Dcid = ""           //explicit
 	odpdetector.state.landcsapeupdater = landscapeupdater
 	odpdetector.config = new(ParsedDetectorconfig)
 	odpdetector.config.Landscapeupdateinterval = landscapeupdater.updateinterval
@@ -60,9 +61,9 @@ func CreateODPdetector(detectoraddress *net.UDPAddr, landscapeupdater *Landscape
 
 func (opdetector *ODPdetector) GetOpinion() *DetectorStatus {
 	opinion := new(DetectorStatus)
-	opdetector.state.mutex.Lock()
+	odpmutex.Lock()
 	*opinion = opdetector.state.DetectorStatus
-	opdetector.state.mutex.Unlock()
+	odpmutex.Unlock()
 	return opinion
 }
 
@@ -75,14 +76,14 @@ func (opdetector *ODPdetector) Run() {
 
 	go func() {
 		for somedbview := range state.landcsapeupdater.Dbupdates {
-			state.mutex.Lock()
+			odpmutex.Lock()
 			if state.Parked {
 				if somedbview.Dcid != "" {
 					if (state.dbview == nil) || (state.dbview.Dcid != somedbview.Dcid) {
 						state.dbview = somedbview
 						state.Parked = false
 						state.Dcid = somedbview.Dcid
-						state.Alive = true
+						state.Aliveopinion = true
 						pinger.updating_chan <- state.dbview.Pingers
 					}
 				}
@@ -94,7 +95,7 @@ func (opdetector *ODPdetector) Run() {
 					panic("change dst datacenter while not parked")
 				}
 			}
-			state.mutex.Unlock()
+			odpmutex.Unlock()
 
 		}
 	}()
@@ -103,9 +104,9 @@ func (opdetector *ODPdetector) Run() {
 	startsuspicion := time.Now()
 	for {
 		mustwait := false
-		state.mutex.Lock()
+		odpmutex.Lock()
 		mustwait = state.Parked
-		state.mutex.Unlock()
+		odpmutex.Unlock()
 
 		if mustwait {
 			fmt.Println("we are parked")
@@ -118,9 +119,9 @@ func (opdetector *ODPdetector) Run() {
 		elapsedping := time.Since(startping)
 		fmt.Printf("Elapsed ping : %s\n", elapsedping)
 
-		state.mutex.Lock()
-		state.Alive = alive
-		state.mutex.Unlock()
+		odpmutex.Lock()
+		state.Aliveopinion = alive
+		odpmutex.Unlock()
 		if alive {
 			fmt.Println("we are alive")
 			time.Sleep(opdetector.config.Repinginterval)
@@ -135,14 +136,14 @@ func (opdetector *ODPdetector) Run() {
 		}
 
 		fmt.Println("create voters")
-		state.mutex.Lock()
+		odpmutex.Lock()
 		urls = make([]string, len(state.dbview.Voters))
 		for i := 0; i < len(urls); i++ {
 			urls[i] = "http://" + state.dbview.Voters[i].Ovip + ":" + strconv.Itoa(state.dbview.Voters[i].Voteport)
 			urls[i] += "/dcprotector/opinion"
 		}
 		dcid = state.dbview.Dcid
-		state.mutex.Unlock()
+		odpmutex.Unlock()
 		fmt.Println("voters created")
 
 		if decision := VotingProc(urls, dcid, opdetector.config.Votingtimeout); decision == -1 {
@@ -154,9 +155,9 @@ func (opdetector *ODPdetector) Run() {
 			if err != nil {
 				fmt.Println("Notified? " + err.Error())
 			}
-			state.mutex.Lock()
+			odpmutex.Lock()
 			state.Parked = true
-			state.mutex.Unlock()
+			odpmutex.Unlock()
 			elapsedsuspicion := time.Since(startsuspicion)
 			fmt.Printf("Elapsed suspicion : %s\n", elapsedsuspicion)
 		} else {
