@@ -92,6 +92,7 @@ type ServerConfig struct {
 	Detectorconfig Detectorconfig `json:"detectorconfig"`
 	Dbconfig       DBconfig       `json:"dbconfig"`
 	Numofwatchers  int            `json:"numofpeers"`
+	Minwatchers    int            `json:"minpeers"`
 }
 
 var jsonfile *string
