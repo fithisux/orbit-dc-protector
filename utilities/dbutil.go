@@ -117,18 +117,16 @@ func (p *PersistencyLayer) InitializeOVP(exposeconfig *ExposeConfig) *OVPData {
 	if ovpdata := p.Describe(exposeconfig); ovpdata != nil {
 		fmt.Println("found me")
 		fmt.Printf("at epoch %d \n", ovpdata.Epoch)
-		if ovpdata.Operating {
-			panic("Cannot initialize operating")
+		if ovpdata.ODPExpose.Dcprotecting != exposeconfig.Odpexpose.Dcprotecting {
+			panic("Cannot flip roles")
 		}
 		ovpdata.Epoch++
-		ovpdata.Operating = true
 		if err := collection.Update(exposeconfig.Ovpexpose, ovpdata); err != nil {
 			panic("Cannot update epoch " + err.Error())
 		}
 	} else {
 		ovpdata := new(OVPData)
 		ovpdata.Epoch = 1
-		ovpdata.Operating = true
 		ovpdata.OVPExpose = exposeconfig.Ovpexpose
 		ovpdata.ODPExpose = exposeconfig.Odpexpose
 		if err := collection.Insert(ovpdata); err != nil {
@@ -138,11 +136,8 @@ func (p *PersistencyLayer) InitializeOVP(exposeconfig *ExposeConfig) *OVPData {
 	return ovpdata
 }
 
-func (p *PersistencyLayer) InitializeODP(exposeconfig *ExposeConfig) *OVPData {	
+func (p *PersistencyLayer) InitializeODP(exposeconfig *ExposeConfig) *OVPData {
 	if ovpdata := p.Describe(exposeconfig); ovpdata != nil {
-		if !ovpdata.Operating {
-			panic("operating == false")
-		}
 		return ovpdata
 	} else {
 		panic("Cannot find odp watchdog")

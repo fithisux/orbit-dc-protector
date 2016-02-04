@@ -35,9 +35,10 @@ type ODPRoute struct {
 }
 
 type ODPExpose struct {
-	Odip     string `bson:"watchdog_odp_ip" json:"watchdog_odp_ip"`
-	Voteport int    `bson:"watchdog_odp_voteport" json:"watchdog_odp_voteport"`
-	Pingport int    `bson:"watchdog_odp_pingport" json:"watchdog_odp_pingport"`
+	Odip         string `bson:"watchdog_odp_ip" json:"watchdog_odp_ip"`
+	Voteport     int    `bson:"watchdog_odp_voteport" json:"watchdog_odp_voteport"`
+	Pingport     int    `bson:"watchdog_odp_pingport" json:"watchdog_odp_pingport"`
+	Dcprotecting bool   `bson:"watchdog_ovp_dcprotecting" json:"watchdog_ovp_dcprotecting"`
 }
 
 type OVPExpose struct {
@@ -57,11 +58,9 @@ func (oe *OVPExpose) Name() string {
 }
 
 type OVPData struct {
-	OVPExpose    `bson:",inline"`
-	Epoch        int  `bson:"watchdog_ovp_epoch" json:"watchdog_ovp_epoch"`
-	Operating    bool `bson:"watchdog_ovp_operating" json:"watchdog_ovp_operating"`
-	Dcprotecting bool `bson:"watchdog_ovp_dcprotecting" json:"watchdog_ovp_dcprotecting"`
-	ODPExpose    `bson:",inline"`
+	OVPExpose `bson:",inline"`
+	Epoch     int `bson:"watchdog_ovp_epoch" json:"watchdog_ovp_epoch"`
+	ODPExpose `bson:",inline"`
 }
 
 type OrbitAttempts struct {
