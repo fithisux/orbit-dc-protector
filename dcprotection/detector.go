@@ -42,7 +42,7 @@ type ODPdetector struct {
 	pinger *Pingagent
 }
 
-func CreateODPdetector(detectoraddress *net.UDPAddr, landscapeupdater *Landscapeupdater, detectorconfig *utilities.Detectorconfig) *ODPdetector {
+func CreateODPdetector(detectoraddress *net.UDPAddr, landscapeupdater *Landscapeupdater, odpconfig *utilities.ODPconfig) *ODPdetector {
 	odpdetector := new(ODPdetector)
 	odpdetector.state = new(DetectorState)
 	odpdetector.state.Parked = true       //explicit
@@ -51,10 +51,10 @@ func CreateODPdetector(detectoraddress *net.UDPAddr, landscapeupdater *Landscape
 	odpdetector.state.landcsapeupdater = landscapeupdater
 	odpdetector.config = new(ParsedDetectorconfig)
 	odpdetector.config.Landscapeupdateinterval = landscapeupdater.updateinterval
-	odpdetector.config.Repinginterval = time.Duration(detectorconfig.Repinginterval) * time.Millisecond
-	odpdetector.config.Votingtimeout = time.Duration(detectorconfig.Votinginterval) * time.Millisecond
-	tempdur := time.Duration(detectorconfig.Pingattempts.Timeout) * time.Millisecond
-	odpdetector.config.Pingattempts = &pinglogic.TimedAttempts{tempdur, detectorconfig.Pingattempts.Retries}
+	odpdetector.config.Repinginterval = time.Duration(odpconfig.Repinginterval) * time.Millisecond
+	odpdetector.config.Votingtimeout = time.Duration(odpconfig.Votinginterval) * time.Millisecond
+	tempdur := time.Duration(odpconfig.Pingattempts.Timeout) * time.Millisecond
+	odpdetector.config.Pingattempts = &pinglogic.TimedAttempts{tempdur, odpconfig.Pingattempts.Retries}
 	odpdetector.config.Detectoraddress = detectoraddress
 	return odpdetector
 }

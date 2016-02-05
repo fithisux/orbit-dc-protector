@@ -45,7 +45,7 @@ func CreateLandscapeupdater(conf *utilities.ServerConfig) *Landscapeupdater {
 	landscapeupdater := new(Landscapeupdater)
 	landscapeupdater.persistencylayer = utilities.CreatePersistencyLayer(&conf.Dbconfig)
 	landscapeupdater.ovpdata = landscapeupdater.persistencylayer.InitializeODP(&conf.Exposeconfig)
-	landscapeupdater.updateinterval = time.Duration(conf.Detectorconfig.Updateinterval) * time.Millisecond
+	landscapeupdater.updateinterval = time.Duration(conf.Odpconfig.Updateinterval) * time.Millisecond
 	landscapeupdater.Dbupdates = make(chan *DBView)
 
 	go func() {

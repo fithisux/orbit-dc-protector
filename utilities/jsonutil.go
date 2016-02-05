@@ -68,11 +68,16 @@ type OrbitAttempts struct {
 	Timeout int `json:"timeout"`
 }
 
-type Detectorconfig struct {
+type ODPconfig struct {
 	Pingattempts   OrbitAttempts `json:"pingattempts"`
 	Updateinterval int64         `json:"updateinterval"`
 	Repinginterval int64         `json:"repinginterval"`
 	Votinginterval int64         `json:"votinginterval"`
+}
+
+type OVPconfig struct {
+	Numofwatchers int `json:"numofpeers"`
+	Minwatchers   int `json:"minpeers"`
 }
 
 type DBconfig struct {
@@ -87,11 +92,10 @@ type ExposeConfig struct {
 }
 
 type ServerConfig struct {
-	Exposeconfig   ExposeConfig   `json:"exposeconfig"`
-	Detectorconfig Detectorconfig `json:"detectorconfig"`
-	Dbconfig       DBconfig       `json:"dbconfig"`
-	Numofwatchers  int            `json:"numofpeers"`
-	Minwatchers    int            `json:"minpeers"`
+	Exposeconfig ExposeConfig `json:"exposeconfig"`
+	Odpconfig    ODPconfig    `json:"odpconfig"`
+	Ovpconfig    OVPconfig    `json:"ovpconfig"`
+	Dbconfig     DBconfig     `json:"dbconfig"`
 }
 
 var jsonfile *string
@@ -114,27 +118,27 @@ func validateJson(content []byte) (*ServerConfig, error) {
 		return nil, err
 	}
 
-	if data.Numofwatchers <= 0 {
+	if data.Ovpconfig.Numofwatchers <= 0 {
 		return nil, errors.New("option : Numofwatchers is a positive integer.")
 	}
 
-	if data.Detectorconfig.Updateinterval <= 0 {
+	if data.Odpconfig.Updateinterval <= 0 {
 		return nil, errors.New("option : Updateinterval is a positive integer.")
 	}
 
-	if data.Detectorconfig.Votinginterval <= 0 {
+	if data.Odpconfig.Votinginterval <= 0 {
 		return nil, errors.New("option : Votinginterval is a positive integer.")
 	}
 
-	if data.Detectorconfig.Repinginterval <= 0 {
+	if data.Odpconfig.Repinginterval <= 0 {
 		return nil, errors.New("option : Repinginterval is a positive integer.")
 	}
 
-	if data.Detectorconfig.Pingattempts.Retries <= 0 {
+	if data.Odpconfig.Pingattempts.Retries <= 0 {
 		return nil, errors.New("option : Retries is a positive integer.")
 	}
 
-	if data.Detectorconfig.Pingattempts.Timeout <= 0 {
+	if data.Odpconfig.Pingattempts.Timeout <= 0 {
 		return nil, errors.New("option : Timeout is a positive integer.")
 	}
 
