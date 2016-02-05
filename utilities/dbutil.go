@@ -129,17 +129,17 @@ func (p *PersistencyLayer) InitializeODP(opconfig *OPConfig) *OPData {
 	return nil
 }
 
-func (p *PersistencyLayer) GetOVPPeers(bound int, opdata *OPData) []OPData {
+func (p *PersistencyLayer) GetOVPPeers(bound int, opconfig *OPConfig) []OPData {
 	mySession := p.grabSession()
 	defer mySession.Close()
 	x := make([]OPData, bound)
 	collection := mySession.DB(AuthDatabase).C("watchdogs")
 	var opdescriptor OPData
-	iter := collection.Find(bson.M{"watchdog_ovp_dcid": opdata.Dcid}).Iter()
+	iter := collection.Find(bson.M{"watchdog_ovp_dcid": opconfig.Dcid}).Iter()
 	counter := 0
 	index := 0
 	for iter.Next(&opdescriptor) {
-		if opdescriptor.OPConfig != opdata.OPConfig {
+		if opdescriptor.OPConfig != *opconfig {
 			index++
 			if counter < bound {
 				x[counter] = opdescriptor

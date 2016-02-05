@@ -50,6 +50,15 @@ type OPData struct {
 	Epoch    int `bson:"watchdog_ovp_epoch" json:"watchdog_ovp_epoch"`
 }
 
+func (o *OPData) Name() string {
+	bb, err := json.Marshal(o)
+	if err != nil {
+		panic("Cannot name agent")
+	} else {
+		return string(bb)
+	}
+}
+
 type OrbitAttempts struct {
 	Retries int `json:"retries"`
 	Timeout int `json:"timeout"`
@@ -63,8 +72,9 @@ type ODPconfig struct {
 }
 
 type OVPconfig struct {
-	Numofwatchers int `json:"numofpeers"`
-	Minwatchers   int `json:"minpeers"`
+	Numofwatchers   int           `json:"numofpeers"`
+	Minwatchers     int           `json:"minpeers"`
+	Refreshattempts OrbitAttempts `json:"refreshattempts"`
 }
 
 type DBconfig struct {
