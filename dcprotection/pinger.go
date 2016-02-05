@@ -12,7 +12,7 @@ import (
 )
 
 type Pingagent struct {
-	updating_chan chan []utilities.OVPData
+	updating_chan chan []utilities.OPData
 	Pingeraddress *net.UDPAddr
 	conf          *pinglogic.TimedAttempts
 	Repinging     time.Duration
@@ -25,7 +25,7 @@ func CreatePingAgent(pingeraddress *net.UDPAddr, repinging time.Duration, conf *
 	pingagent := new(Pingagent)
 	pingagent.pingtargets = nil
 	pingagent.Pingeraddress = pingeraddress
-	pingagent.updating_chan = make(chan []utilities.OVPData)
+	pingagent.updating_chan = make(chan []utilities.OPData)
 	pingagent.conf = conf
 	pingagent.Repinging = repinging
 	go ping_them(pingagent)

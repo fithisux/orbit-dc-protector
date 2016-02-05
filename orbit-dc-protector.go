@@ -46,14 +46,14 @@ func main() {
 		panic(err.Error())
 	}
 
-	ra, err := net.ResolveUDPAddr("udp", conf.Exposeconfig.Odpexpose.Odip+":"+strconv.Itoa(conf.Exposeconfig.Odpexpose.Pingport))
+	ra, err := net.ResolveUDPAddr("udp", conf.Opconfig.Odip+":"+strconv.Itoa(conf.Opconfig.Pingport))
 	if err != nil {
 		panic(err.Error())
 	}
 	go pinglogic.Passive(ra)
 
 	landscapeupdater := dcprotection.CreateLandscapeupdater(conf)
-	detector = dcprotection.CreateODPdetector(ra, landscapeupdater, &conf.Detectorconfig)
+	detector = dcprotection.CreateODPdetector(ra, landscapeupdater, &conf.Odpconfig)
 	go detector.Run()
 	wsContainer := restful.NewContainer()
 	log.Printf("Registering")
@@ -75,7 +75,7 @@ func main() {
 		wsContainer.Filter(wsContainer.OPTIONSFilter)
 	*/
 
-	log.Printf("start listening on localhost:%d\n", conf.Exposeconfig.Odpexpose.Voteport)
-	server := &http.Server{Addr: conf.Exposeconfig.Ovpexpose.Ovip + ":" + strconv.Itoa(conf.Exposeconfig.Odpexpose.Voteport), Handler: wsContainer}
+	log.Printf("start listening on localhost:%d\n", conf.Opconfig.Voteport)
+	server := &http.Server{Addr: conf.Opconfig.Ovip + ":" + strconv.Itoa(conf.Opconfig.Voteport), Handler: wsContainer}
 	log.Fatal(server.ListenAndServe())
 }

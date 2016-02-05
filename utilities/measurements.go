@@ -21,37 +21,36 @@ If you have questions concerning this license or the applicable additional terms
 package utilities
 
 import (
-		"time"
+	"time"
 )
+
 type ProtectorMeasurements struct {
 	DCProtector bool
-	Ovip         string
-	Dcid         string
-	Timestamp  	 time.Time
-	Windowvalue	 int
-	Juststarted		bool
-	Epoch			int
+	Ovip        string
+	Dcid        string
+	Timestamp   time.Time
+	Windowvalue int
+	Juststarted bool
+	Epoch       int
 }
 type DCMeasurments struct {
 	ProtectorMeasurements
-	Targetdcid string
+	Targetdcid             string
 	Internalfalsepositives int
 	Externalfalsepositives int
-	TimeToPing int
-	TimeToVote int
-	Pinged int
-	Votings int
-	
+	TimeToPing             int
+	TimeToVote             int
+	Pinged                 int
+	Votings                int
 }
 
 type VMDetection struct {
-	Vmid string
-	Ovip string
+	Vmid  string
+	Ovip  string
 	Epoch int
-	
 }
 
 type VMMeasurments struct {
 	Registeredservers int
-	Detections []VMDetection
+	Detections        []VMDetection
 }

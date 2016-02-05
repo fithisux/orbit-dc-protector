@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"net"
+	"os/exec"
+	"strconv"
 	"sync"
+	"time"
 
 	"github.com/fithisux/gopinger/pinglogic"
 	"github.com/fithisux/orbit-dc-protector/utilities"
-	//"os"
-	"os/exec"
-	"strconv"
-	"time"
 )
 
 type ParsedDetectorconfig struct {

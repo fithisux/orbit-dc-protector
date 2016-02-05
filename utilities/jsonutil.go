@@ -29,38 +29,25 @@ import (
 	"os"
 )
 
-type ODPRoute struct {
+type OPRoute struct {
 	Src string `bson:"route_odp_src"`
 	Dst string `bson:"route_odp_dst"`
 }
 
-type ODPExpose struct {
+type OPConfig struct {
 	Odip         string `bson:"watchdog_odp_ip" json:"watchdog_odp_ip"`
 	Voteport     int    `bson:"watchdog_odp_voteport" json:"watchdog_odp_voteport"`
 	Pingport     int    `bson:"watchdog_odp_pingport" json:"watchdog_odp_pingport"`
 	Dcprotecting bool   `bson:"watchdog_ovp_dcprotecting" json:"watchdog_ovp_dcprotecting"`
-}
-
-type OVPExpose struct {
 	Ovip         string `bson:"watchdog_ovp_ip" json:"watchdog_ovp_ip"`
 	Serfport     int    `bson:"watchdog_ovp_serfport" json:"watchdog_ovp_serfport"`
 	Announceport int    `bson:"watchdog_ovp_announceport"  json:"watchdog_ovp_announceport"`
 	Dcid         string `bson:"watchdog_ovp_dcid" json:"watchdog_ovp_dcid"`
 }
 
-func (oe *OVPExpose) Name() string {
-	bb, err := json.Marshal(oe)
-	if err != nil {
-		panic(err)
-	}
-
-	return string(bb)
-}
-
-type OVPData struct {
-	OVPExpose `bson:",inline"`
-	Epoch     int `bson:"watchdog_ovp_epoch" json:"watchdog_ovp_epoch"`
-	ODPExpose `bson:",inline"`
+type OPData struct {
+	OPConfig `bson:",inline"`
+	Epoch    int `bson:"watchdog_ovp_epoch" json:"watchdog_ovp_epoch"`
 }
 
 type OrbitAttempts struct {
@@ -86,16 +73,11 @@ type DBconfig struct {
 	AuthPassword string   `json:"password"`
 }
 
-type ExposeConfig struct {
-	Ovpexpose OVPExpose `json:"ovpexpose"`
-	Odpexpose ODPExpose `json:"odpexpose"`
-}
-
 type ServerConfig struct {
-	Exposeconfig ExposeConfig `json:"exposeconfig"`
-	Odpconfig    ODPconfig    `json:"odpconfig"`
-	Ovpconfig    OVPconfig    `json:"ovpconfig"`
-	Dbconfig     DBconfig     `json:"dbconfig"`
+	Opconfig  OPConfig  `json:"opconfig"`
+	Odpconfig ODPconfig `json:"odpconfig"`
+	Ovpconfig OVPconfig `json:"ovpconfig"`
+	Dbconfig  DBconfig  `json:"dbconfig"`
 }
 
 var jsonfile *string

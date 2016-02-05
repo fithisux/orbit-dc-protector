@@ -77,27 +77,12 @@ func (p *PersistencyLayer) grabSession() *mgo.Session {
 	}
 }
 
-func (p *PersistencyLayer) Makefailed(expose *OVPExpose) {
+func (p *PersistencyLayer) Describe(opconfig *OPConfig) *OPData {
 	mySession := p.grabSession()
 	defer mySession.Close()
 	collection := mySession.DB(AuthDatabase).C("watchdogs")
-	change := mgo.Change{
-		Update:    bson.M{"$set": bson.M{"watchdog_ovp_operating": false}},
-		ReturnNew: true,
-	}
-	var characterization OVPData
-	_, err := collection.Find(expose).Apply(change, &characterization)
-	if err != nil {
-		panic("Makefailed found no objects " + err.Error())
-	}
-}
-
-func (p *PersistencyLayer) Describe(exposeconfig *ExposeConfig) *OVPData {
-	mySession := p.grabSession()
-	defer mySession.Close()
-	collection := mySession.DB(AuthDatabase).C("watchdogs")
-	descriptor := new(OVPData)
-	if err := collection.Find(exposeconfig.Ovpexpose).One(&descriptor); err == nil {
+	descriptor := new(OPData)
+	if err := collection.Find(opconfig).One(&descriptor); err == nil {
 		return descriptor
 	} else {
 		if err.Error() == mgo.ErrNotFound.Error() {
@@ -108,36 +93,35 @@ func (p *PersistencyLayer) Describe(exposeconfig *ExposeConfig) *OVPData {
 	}
 }
 
-func (p *PersistencyLayer) InitializeOVP(exposeconfig *ExposeConfig) *OVPData {
+func (p *PersistencyLayer) InitializeOVP(opconfig *OPConfig) *OPData {
 	fmt.Println("searching for ovp watchdog in " + AuthDatabase)
 	mySession := p.grabSession()
 	defer mySession.Close()
 	collection := mySession.DB(AuthDatabase).C("watchdogs")
-	var ovpdata *OVPData
-	if ovpdata := p.Describe(exposeconfig); ovpdata != nil {
+	var ovpdata *OPData
+	if ovpdata := p.Describe(opconfig); ovpdata != nil {
 		fmt.Println("found me")
 		fmt.Printf("at epoch %d \n", ovpdata.Epoch)
-		if ovpdata.ODPExpose.Dcprotecting != exposeconfig.Odpexpose.Dcprotecting {
+		if ovpdata.Dcprotecting != opconfig.Dcprotecting {
 			panic("Cannot flip roles")
 		}
 		ovpdata.Epoch++
-		if err := collection.Update(exposeconfig.Ovpexpose, ovpdata); err != nil {
+		if err := collection.Update(opconfig, ovpdata); err != nil {
 			panic("Cannot update epoch " + err.Error())
 		}
 	} else {
-		ovpdata := new(OVPData)
-		ovpdata.Epoch = 1
-		ovpdata.OVPExpose = exposeconfig.Ovpexpose
-		ovpdata.ODPExpose = exposeconfig.Odpexpose
-		if err := collection.Insert(ovpdata); err != nil {
+		opdata := new(OPData)
+		opdata.Epoch = 1
+		opdata.OPConfig = *opconfig
+		if err := collection.Insert(opdata); err != nil {
 			panic("Cannot start epoch " + err.Error())
 		}
 	}
 	return ovpdata
 }
 
-func (p *PersistencyLayer) InitializeODP(exposeconfig *ExposeConfig) *OVPData {
-	if ovpdata := p.Describe(exposeconfig); ovpdata != nil {
+func (p *PersistencyLayer) InitializeODP(opconfig *OPConfig) *OPData {
+	if ovpdata := p.Describe(opconfig); ovpdata != nil {
 		return ovpdata
 	} else {
 		panic("Cannot find odp watchdog")
@@ -145,26 +129,26 @@ func (p *PersistencyLayer) InitializeODP(exposeconfig *ExposeConfig) *OVPData {
 	return nil
 }
 
-func (p *PersistencyLayer) GetOVPPeers(bound int, ovpdata *OVPData) []OVPExpose {
+func (p *PersistencyLayer) GetOVPPeers(bound int, opdata *OPData) []OPData {
 	mySession := p.grabSession()
 	defer mySession.Close()
-	x := make([]OVPExpose, bound)
+	x := make([]OPData, bound)
 	collection := mySession.DB(AuthDatabase).C("watchdogs")
-	var ovpdescriptor OVPData
-	iter := collection.Find(bson.M{"watchdog_ovp_dcid": ovpdata.Dcid, "watchdog_ovp_operating": true}).Iter()
+	var opdescriptor OPData
+	iter := collection.Find(bson.M{"watchdog_ovp_dcid": opdata.Dcid}).Iter()
 	counter := 0
 	index := 0
-	for iter.Next(&ovpdescriptor) {
-		if ovpdescriptor.OVPExpose != ovpdata.OVPExpose {
+	for iter.Next(&opdescriptor) {
+		if opdescriptor.OPConfig != opdata.OPConfig {
 			index++
 			if counter < bound {
-				x[counter] = ovpdescriptor.OVPExpose
+				x[counter] = opdescriptor
 				counter++
 			} else {
 				j := rand.Intn(index)
 				j = j + 1
 				if j < bound {
-					x[j] = ovpdescriptor.OVPExpose
+					x[j] = opdescriptor
 				}
 			}
 		}
@@ -181,13 +165,13 @@ func (p *PersistencyLayer) GetOVPPeers(bound int, ovpdata *OVPData) []OVPExpose 
 	return x
 }
 
-func (p *PersistencyLayer) GetODPPeers(dcid string) []OVPData {
+func (p *PersistencyLayer) GetODPPeers(dcid string) []OPData {
 	fmt.Println("odppreers for " + dcid)
 	mySession := p.grabSession()
 	defer mySession.Close()
 	collection := mySession.DB(AuthDatabase).C("watchdogs")
-	var servers []OVPData
-	if err := collection.Find(bson.M{"watchdog_ovp_dcid": dcid, "watchdog_ovp_operating": true, "watchdog_ovp_dcprotecting": true}).All(&servers); err != nil {
+	var servers []OPData
+	if err := collection.Find(bson.M{"watchdog_ovp_dcid": dcid, "watchdog_ovp_dcprotecting": true}).All(&servers); err != nil {
 		panic("general error at ovptargets " + err.Error())
 	} else {
 		return servers
@@ -198,7 +182,7 @@ func (p *PersistencyLayer) GetRoute(dcid string) string {
 	mySession := p.grabSession()
 	defer mySession.Close()
 	collection := mySession.DB(AuthDatabase).C("routing")
-	var candidate ODPRoute
+	var candidate OPRoute
 	//fmt.Println("find route from "+p.Ovpdata.Dcid)
 	if err := collection.Find(bson.M{"route_odp_src": dcid}).One(&candidate); err != nil {
 		panic("general error at routes " + err.Error())
