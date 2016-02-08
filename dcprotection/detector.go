@@ -13,18 +13,11 @@ import (
 	"github.com/fithisux/orbit-dc-protector/utilities"
 )
 
-type ParsedDetectorconfig struct {
-	Pingattempts            *pinglogic.TimedAttempts
-	Landscapeupdateinterval time.Duration
-	Repinginterval          time.Duration
-	Votingtimeout           time.Duration
-	Detectoraddress         *net.UDPAddr
-}
-
 type DetectorStatus struct {
-	Dcid         string
-	Aliveopinion bool
-	Parked       bool
+	Dcid          string
+	Aliveopinion  bool
+	Alivedecision bool
+	Parked        bool
 }
 
 type DetectorState struct {
@@ -36,25 +29,26 @@ type DetectorState struct {
 var odpmutex sync.Mutex
 
 type ODPdetector struct {
-	state  *DetectorState
-	config *ParsedDetectorconfig
-	pinger *Pingagent
+	state           *DetectorState
+	odpconfig       *utilities.ODPconfig
+	pinger          *Pingagent
+	detectoraddress *net.UDPAddr
 }
 
-func CreateODPdetector(detectoraddress *net.UDPAddr, landscapeupdater *Landscapeupdater, odpconfig *utilities.ODPconfig) *ODPdetector {
+func CreateODPdetector(landscapeupdater *Landscapeupdater, serverconfig *utilities.ServerConfig) *ODPdetector {
 	odpdetector := new(ODPdetector)
 	odpdetector.state = new(DetectorState)
 	odpdetector.state.Parked = true       //explicit
 	odpdetector.state.Aliveopinion = true //explicit
 	odpdetector.state.Dcid = ""           //explicit
 	odpdetector.state.landcsapeupdater = landscapeupdater
-	odpdetector.config = new(ParsedDetectorconfig)
-	odpdetector.config.Landscapeupdateinterval = landscapeupdater.updateinterval
-	odpdetector.config.Repinginterval = time.Duration(odpconfig.Repinginterval) * time.Millisecond
-	odpdetector.config.Votingtimeout = time.Duration(odpconfig.Votinginterval) * time.Millisecond
-	tempdur := time.Duration(odpconfig.Pingattempts.Timeout) * time.Millisecond
-	odpdetector.config.Pingattempts = &pinglogic.TimedAttempts{tempdur, odpconfig.Pingattempts.Retries}
-	odpdetector.config.Detectoraddress = detectoraddress
+	odpdetector.odpconfig = &serverconfig.Odpconfig
+	detectoraddress, err := net.ResolveUDPAddr("udp", serverconfig.Opconfig.Odip+":"+strconv.Itoa(serverconfig.Opconfig.Pingport))
+	if err != nil {
+		panic(err.Error())
+	}
+	go pinglogic.Passive(detectoraddress)
+	odpdetector.detectoraddress = detectoraddress
 	return odpdetector
 }
 
@@ -67,7 +61,7 @@ func (opdetector *ODPdetector) GetOpinion() *DetectorStatus {
 }
 
 func (opdetector *ODPdetector) Run() {
-	pinger := CreatePingAgent(opdetector.config.Detectoraddress, opdetector.config.Repinginterval, opdetector.config.Pingattempts)
+	pinger := CreatePingAgent(opdetector.detectoraddress, opdetector.odpconfig.Repinginterval, &opdetector.odpconfig.Pingattempts)
 	state := opdetector.state
 
 	var urls []string
@@ -99,8 +93,7 @@ func (opdetector *ODPdetector) Run() {
 		}
 	}()
 
-	continuousdown := false
-	startsuspicion := time.Now()
+	suspicion := utilities.Createdcsuspicion()
 	for {
 		mustwait := false
 		odpmutex.Lock()
@@ -109,7 +102,7 @@ func (opdetector *ODPdetector) Run() {
 
 		if mustwait {
 			fmt.Println("we are parked")
-			time.Sleep(opdetector.config.Landscapeupdateinterval)
+			time.Sleep(opdetector.odpconfig.Landscapeupdateinterval)
 			continue
 		}
 
@@ -121,47 +114,42 @@ func (opdetector *ODPdetector) Run() {
 		odpmutex.Lock()
 		state.Aliveopinion = alive
 		odpmutex.Unlock()
+		suspicion.Update(alive)
 		if alive {
 			fmt.Println("we are alive")
-			time.Sleep(opdetector.config.Repinginterval)
-			continuousdown = false
 			continue
 		} else {
 			fmt.Println("we are down")
-			if !continuousdown {
-				startsuspicion = time.Now()
-				continuousdown = true
-			}
-		}
-
-		fmt.Println("create voters")
-		odpmutex.Lock()
-		urls = make([]string, len(state.dbview.Voters))
-		for i := 0; i < len(urls); i++ {
-			urls[i] = "http://" + state.dbview.Voters[i].Ovip + ":" + strconv.Itoa(state.dbview.Voters[i].Voteport)
-			urls[i] += "/dcprotector/opinion"
-		}
-		dcid = state.dbview.Dcid
-		odpmutex.Unlock()
-		fmt.Println("voters created")
-
-		if decision := VotingProc(urls, dcid, opdetector.config.Votingtimeout); decision == -1 {
-			fmt.Println("datacenter announcement for " + dcid)
-			cmd := exec.Command("./faildc", dcid)
-			var out bytes.Buffer
-			cmd.Stdout = &out
-			err := cmd.Run()
-			if err != nil {
-				fmt.Println("Notified? " + err.Error())
-			}
+			fmt.Println("create voters")
 			odpmutex.Lock()
-			state.Parked = true
+			urls = make([]string, len(state.dbview.Voters))
+			for i := 0; i < len(urls); i++ {
+				urls[i] = "http://" + state.dbview.Voters[i].Ovip + ":" + strconv.Itoa(state.dbview.Voters[i].Voteport)
+				urls[i] += "/dcprotector/opinion"
+			}
+			dcid = state.dbview.Dcid
 			odpmutex.Unlock()
-			elapsedsuspicion := time.Since(startsuspicion)
-			fmt.Printf("Elapsed suspicion : %s\n", elapsedsuspicion)
-		} else {
-			fmt.Println("We are undecided")
-			continue //undecided
+			fmt.Println("voters created")
+			if answers, decision := VotingProc(urls, dcid, opdetector.odpconfig.Votingthreshold, opdetector.odpconfig.Votingtimeout); decision == -1 {
+				fmt.Println("datacenter announcement for " + dcid)
+				fmt.Println("after " + strconv.Itoa(answers) + " answers out of " + strconv.Itoa(len(urls)))
+				cmd := exec.Command("./faildc", dcid)
+				var out bytes.Buffer
+				cmd.Stdout = &out
+				err := cmd.Run()
+				if err != nil {
+					fmt.Println("Notified? " + err.Error())
+				}
+				odpmutex.Lock()
+				state.Parked = true
+				odpmutex.Unlock()
+				_, elapsedsuspicion := suspicion.Converged()
+				fmt.Printf("Elapsed suspicion : %s\n", elapsedsuspicion)
+			} else {
+				fmt.Println("We are undecided")
+				continue //undecided
+			}
 		}
+
 	}
 }

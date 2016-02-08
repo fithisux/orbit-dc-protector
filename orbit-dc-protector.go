@@ -46,14 +46,8 @@ func main() {
 		panic(err.Error())
 	}
 
-	ra, err := net.ResolveUDPAddr("udp", conf.Opconfig.Odip+":"+strconv.Itoa(conf.Opconfig.Pingport))
-	if err != nil {
-		panic(err.Error())
-	}
-	go pinglogic.Passive(ra)
-
 	landscapeupdater := dcprotection.CreateLandscapeupdater(conf)
-	detector = dcprotection.CreateODPdetector(ra, landscapeupdater, &conf.Odpconfig)
+	detector = dcprotection.CreateODPdetector(landscapeupdater, &conf)
 	go detector.Run()
 	wsContainer := restful.NewContainer()
 	log.Printf("Registering")

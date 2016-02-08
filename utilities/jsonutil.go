@@ -27,6 +27,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"time"
+
+	"github.com/fithisux/gopinger/pinglogic"
 )
 
 type OPRoute struct {
@@ -59,22 +62,18 @@ func (o *OPData) Name() string {
 	}
 }
 
-type OrbitAttempts struct {
-	Retries int `json:"retries"`
-	Timeout int `json:"timeout"`
-}
-
 type ODPconfig struct {
-	Pingattempts   OrbitAttempts `json:"pingattempts"`
-	Updateinterval int64         `json:"updateinterval"`
-	Repinginterval int64         `json:"repinginterval"`
-	Votinginterval int64         `json:"votinginterval"`
+	Pingattempts            pinglogic.TimedAttempts `json:"pingattempts"`
+	Landscapeupdateinterval time.Duration           `json:"updateinterval"`
+	Repinginterval          time.Duration           `json:"repinginterval"`
+	Votingtimeout           time.Duration           `json:"votingtimeout"`
+	Votingthreshold         float64                 `json:"votingthreshold"`
 }
 
 type OVPconfig struct {
-	Numofwatchers   int           `json:"numofpeers"`
-	Minwatchers     int           `json:"minpeers"`
-	Refreshattempts OrbitAttempts `json:"refreshattempts"`
+	Numofwatchers   int                     `json:"numofpeers"`
+	Minwatchers     int                     `json:"minpeers"`
+	Refreshattempts pinglogic.TimedAttempts `json:"refreshattempts"`
 }
 
 type DBconfig struct {
@@ -114,11 +113,11 @@ func validateJson(content []byte) (*ServerConfig, error) {
 		return nil, errors.New("option : Numofwatchers is a positive integer.")
 	}
 
-	if data.Odpconfig.Updateinterval <= 0 {
+	if data.Odpconfig.Landscapeupdateinterval <= 0 {
 		return nil, errors.New("option : Updateinterval is a positive integer.")
 	}
 
-	if data.Odpconfig.Votinginterval <= 0 {
+	if data.Odpconfig.Votingtimeout <= 0 {
 		return nil, errors.New("option : Votinginterval is a positive integer.")
 	}
 

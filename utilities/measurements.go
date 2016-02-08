@@ -54,3 +54,33 @@ type VMMeasurments struct {
 	Registeredservers int
 	Detections        []VMDetection
 }
+
+type Dcsuspicion struct {
+	continuousdown bool
+	startsuspicion time.Time
+}
+
+func Createdcsuspicion() *Dcsuspicion {
+	dd := new(Dcsuspicion)
+	dd.Reset()
+	return dd
+}
+
+func (dd *Dcsuspicion) Reset() {
+	dd.continuousdown = false
+	dd.startsuspicion = time.Now()
+}
+
+func (dd *Dcsuspicion) Update(status bool) {
+	if status {
+		dd.Reset()
+	} else {
+		if !dd.continuousdown {
+			dd.continuousdown = true
+		}
+	}
+}
+
+func (dd *Dcsuspicion) Converged() (bool, time.Duration) {
+	return dd.continuousdown, time.Since(dd.startsuspicion)
+}

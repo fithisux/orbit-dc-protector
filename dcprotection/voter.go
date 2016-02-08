@@ -3,6 +3,7 @@ package dcprotection
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -10,9 +11,9 @@ type Datacentergallop struct {
 	Datacenter string `json:"Datacenter"`
 }
 
-func VotingProc(urls []string, datacenter string, votingtimeout time.Duration) int {
+func VotingProc(urls []string, datacenter string, votingthreshold float64, votingtimeout time.Duration) (int, int) {
 	if len(urls) == 0 {
-		return -1
+		return 0, -1
 	}
 
 	reqbody, ok := json.Marshal(Datacentergallop{datacenter})
@@ -20,16 +21,14 @@ func VotingProc(urls []string, datacenter string, votingtimeout time.Duration) i
 		panic("Unmarshaller")
 	}
 
-	decision := 0
 	responses := make(chan Respondingdata)
 	for _, url := range urls {
 		fmt.Println("Request vote from " + url)
 		go SendToPartner(url, reqbody, votingtimeout, responses)
 	}
 	building := -1 //i know you are dead
-	candidates := 1
+	answers := 0
 	opinion := new(DetectorStatus)
-	counter := 0
 	for resus := range responses {
 		fmt.Println("received something")
 		if resus.Failure == nil {
@@ -41,7 +40,7 @@ func VotingProc(urls []string, datacenter string, votingtimeout time.Duration) i
 					} else {
 						building--
 					}
-					candidates++
+					answers++
 				}
 			} else {
 				panic("Unmarshaller")
@@ -49,25 +48,26 @@ func VotingProc(urls []string, datacenter string, votingtimeout time.Duration) i
 		} else {
 			fmt.Println("got failure")
 		}
-		counter++
-		if counter == len(urls) {
-			break
-		}
 	}
 
 	close(responses)
 
-	active := 1 + ((len(urls) + 1) / 2)
-
-	if candidates >= active {
-		if candidates == -building {
-			decision = -1
-		} else if candidates == building {
-			decision = 1
+	threshold := int(math.Ceil(0.5*float64(len(urls)) + 0.5))
+	decision := 0
+	if answers >= threshold {
+		threshold = int(math.Ceil(votingthreshold * float64(answers)))
+		if building < 0 {
+			if -building >= threshold {
+				decision = -1
+			}
+		} else {
+			if building >= threshold {
+				decision = 1
+			}
 		}
 	} else {
 		panic("Not enough voters answered")
 	}
 	fmt.Printf("Vote == %d\n", decision)
-	return decision
+	return answers, decision
 }
