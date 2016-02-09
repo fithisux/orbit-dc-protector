@@ -41,6 +41,7 @@ func VotingProc(urls []string, datacenter string, votingthreshold float64, votin
 						building--
 					}
 					answers++
+					fmt.Println("collect answer")
 				} else {
 					panic("wrong vote???")
 				}
@@ -51,7 +52,7 @@ func VotingProc(urls []string, datacenter string, votingthreshold float64, votin
 			fmt.Println("got failure")
 		}
 	}
-
+	fmt.Printf("voting finished \n")
 	close(responses)
 	fmt.Printf("Create vote \n")
 	threshold := int(math.Ceil(0.5*float64(len(urls)) + 0.5))
