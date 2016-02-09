@@ -22,12 +22,10 @@ package main
 
 import (
 	"log"
-	"net"
 	"net/http"
 	"strconv"
 
 	"github.com/emicklei/go-restful"
-	"github.com/fithisux/gopinger/pinglogic"
 	"github.com/fithisux/orbit-dc-protector/dcprotection"
 	"github.com/fithisux/orbit-dc-protector/utilities"
 )
@@ -47,7 +45,7 @@ func main() {
 	}
 
 	landscapeupdater := dcprotection.CreateLandscapeupdater(conf)
-	detector = dcprotection.CreateODPdetector(landscapeupdater, &conf)
+	detector = dcprotection.CreateODPdetector(landscapeupdater, conf)
 	go detector.Run()
 	wsContainer := restful.NewContainer()
 	log.Printf("Registering")
