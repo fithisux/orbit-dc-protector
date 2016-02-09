@@ -29,14 +29,9 @@ func VotingProc(urls []string, datacenter string, votingthreshold float64, votin
 	building := -1 //i know you are dead
 	answers := 0
 	opinion := new(DetectorStatus)
-	index := len(urls)
+	index := 0
 
 	for resus := range responses {
-		fmt.Println("received something")
-		index--
-		if index < 0 {
-			break
-		}
 		if resus.Failure == nil {
 			fmt.Println("received correct")
 			if err := json.Unmarshal(resus.Data, opinion); err == nil {
@@ -56,6 +51,11 @@ func VotingProc(urls []string, datacenter string, votingthreshold float64, votin
 			}
 		} else {
 			fmt.Println("got failure")
+		}
+		index++
+		fmt.Printf("received something %d \n", index)
+		if index == len(urls) {
+			break
 		}
 	}
 	fmt.Printf("voting finished \n")
