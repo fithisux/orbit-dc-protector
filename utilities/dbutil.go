@@ -30,8 +30,8 @@ import (
 )
 
 const (
-	MongoTimeout = 60
-	AuthDatabase = "orbitgoer"
+	MongoTimeout  = 60
+	OrbitDatabase = "orbitgoer"
 )
 
 type PersistencyLayer struct {
@@ -45,7 +45,7 @@ func CreatePersistencyLayer(dbconfig *DBconfig) *PersistencyLayer {
 	mongoDBDialInfo := &mgo.DialInfo{
 		Addrs:    dbconfig.Mongourls,
 		Timeout:  MongoTimeout * time.Second,
-		Database: AuthDatabase,
+		Database: "admin",
 		Username: p.dbconfig.AuthUsername,
 		Password: p.dbconfig.AuthPassword,
 	}
@@ -80,7 +80,7 @@ func (p *PersistencyLayer) grabSession() *mgo.Session {
 func (p *PersistencyLayer) Describe(opconfig *OPConfig) *OPData {
 	mySession := p.grabSession()
 	defer mySession.Close()
-	collection := mySession.DB(AuthDatabase).C("watchdogs")
+	collection := mySession.DB(OrbitDatabase).C("watchdogs")
 	descriptor := new(OPData)
 	if err := collection.Find(opconfig).One(&descriptor); err == nil {
 		return descriptor
@@ -94,10 +94,10 @@ func (p *PersistencyLayer) Describe(opconfig *OPConfig) *OPData {
 }
 
 func (p *PersistencyLayer) InitializeOVP(opconfig *OPConfig) *OPData {
-	fmt.Println("searching for ovp watchdog in " + AuthDatabase)
+	fmt.Println("searching for ovp watchdog in " + OrbitDatabase)
 	mySession := p.grabSession()
 	defer mySession.Close()
-	collection := mySession.DB(AuthDatabase).C("watchdogs")
+	collection := mySession.DB(OrbitDatabase).C("watchdogs")
 	var ovpdata *OPData
 	if ovpdata := p.Describe(opconfig); ovpdata != nil {
 		fmt.Println("found me")
@@ -133,7 +133,7 @@ func (p *PersistencyLayer) GetOVPPeers(bound int, opconfig *OPConfig) []OPData {
 	mySession := p.grabSession()
 	defer mySession.Close()
 	x := make([]OPData, bound)
-	collection := mySession.DB(AuthDatabase).C("watchdogs")
+	collection := mySession.DB(OrbitDatabase).C("watchdogs")
 	var opdescriptor OPData
 	iter := collection.Find(bson.M{"watchdog_ovp_dcid": opconfig.Dcid}).Iter()
 	counter := 0
@@ -169,7 +169,7 @@ func (p *PersistencyLayer) GetODPPeers(dcid string) []OPData {
 	fmt.Println("odppreers for " + dcid)
 	mySession := p.grabSession()
 	defer mySession.Close()
-	collection := mySession.DB(AuthDatabase).C("watchdogs")
+	collection := mySession.DB(OrbitDatabase).C("watchdogs")
 	var servers []OPData
 	if err := collection.Find(bson.M{"watchdog_ovp_dcid": dcid, "watchdog_ovp_dcprotecting": true}).All(&servers); err != nil {
 		panic("general error at ovptargets " + err.Error())
@@ -181,7 +181,7 @@ func (p *PersistencyLayer) GetODPPeers(dcid string) []OPData {
 func (p *PersistencyLayer) GetRoute(dcid string) string {
 	mySession := p.grabSession()
 	defer mySession.Close()
-	collection := mySession.DB(AuthDatabase).C("routing")
+	collection := mySession.DB(OrbitDatabase).C("routing")
 	var candidate OPRoute
 	//fmt.Println("find route from "+p.Ovpdata.Dcid)
 	if err := collection.Find(bson.M{"route_odp_src": dcid}).One(&candidate); err != nil {
