@@ -99,26 +99,26 @@ func (p *PersistencyLayer) InitializeOVP(opconfig *OPConfig) *OPData {
 	mySession := p.grabSession()
 	defer mySession.Close()
 	collection := mySession.DB(OrbitDatabase).C("watchdogs")
-	var ovpdata *OPData
-	if ovpdata := p.Describe(opconfig); ovpdata != nil {
+	var opdata *OPData
+	if opdata = p.Describe(opconfig); opdata != nil {
 		fmt.Println("found me")
-		fmt.Printf("at epoch %d \n", ovpdata.Epoch)
-		if ovpdata.Dcprotecting != opconfig.Dcprotecting {
+		fmt.Printf("at epoch %d \n", opdata.Epoch)
+		if opdata.Dcprotecting != opconfig.Dcprotecting {
 			panic("Cannot flip roles")
 		}
-		ovpdata.Epoch++
-		if err := collection.Update(opconfig, ovpdata); err != nil {
+		opdata.Epoch++
+		if err := collection.Update(opconfig, opdata); err != nil {
 			panic("Cannot update epoch " + err.Error())
 		}
 	} else {
-		opdata := new(OPData)
+		opdata = new(OPData)
 		opdata.Epoch = 1
 		opdata.OPConfig = *opconfig
 		if err := collection.Insert(opdata); err != nil {
 			panic("Cannot start epoch " + err.Error())
 		}
 	}
-	return ovpdata
+	return opdata
 }
 
 func (p *PersistencyLayer) InitializeODP(opconfig *OPConfig) *OPData {
