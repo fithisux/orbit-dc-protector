@@ -137,6 +137,11 @@ func validateJson(content []byte) (*ServerConfig, error) {
 		return nil, errors.New("zero mongourls")
 	}
 
+	data.Odpconfig.Landscapeupdateinterval *= time.Millisecond
+	data.Odpconfig.Repinginterval *= time.Millisecond
+	data.Odpconfig.Votingtimeout *= time.Millisecond
+	data.Odpconfig.Pingattempts.Timeout *= time.Millisecond
+	data.Ovpconfig.Refreshattempts.Timeout *= time.Millisecond
 	return &data, nil
 }
 
