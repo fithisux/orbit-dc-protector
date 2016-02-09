@@ -42,6 +42,7 @@ type PersistencyLayer struct {
 func CreatePersistencyLayer(dbconfig *DBconfig) *PersistencyLayer {
 	p := new(PersistencyLayer)
 	p.dbconfig = dbconfig
+	fmt.Println("connecting")
 	mongoDBDialInfo := &mgo.DialInfo{
 		Addrs:    dbconfig.Mongourls,
 		Timeout:  MongoTimeout * time.Second,
