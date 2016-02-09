@@ -184,7 +184,7 @@ func (p *PersistencyLayer) GetRoute(dcid string) string {
 	defer mySession.Close()
 	collection := mySession.DB(OrbitDatabase).C("routing")
 	var candidate OPRoute
-	//fmt.Println("find route from "+p.Ovpdata.Dcid)
+	fmt.Println("find route from " + dcid)
 	if err := collection.Find(bson.M{"route_odp_src": dcid}).One(&candidate); err != nil {
 		panic("general error at routes " + err.Error())
 	}
