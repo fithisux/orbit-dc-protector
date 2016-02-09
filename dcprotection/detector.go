@@ -125,7 +125,7 @@ func (opdetector *ODPdetector) Run() {
 			urls = make([]string, len(state.dbview.Voters))
 			for i := 0; i < len(urls); i++ {
 				urls[i] = "http://" + state.dbview.Voters[i].Ovip + ":" + strconv.Itoa(state.dbview.Voters[i].Voteport)
-				urls[i] += "/dcprotector/opinion"
+				urls[i] += "/odp/opinion"
 			}
 			dcid = state.dbview.Dcid
 			odpmutex.Unlock()
