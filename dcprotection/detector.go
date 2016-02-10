@@ -18,7 +18,7 @@ var odpmutex sync.Mutex
 type ODPdetector struct {
 	landcsapeupdater *Landscapeupdater
 	dbview           *DBView
-	opinion          *DetectorOpinion
+	opinion          *utilities.DetectorOpinion
 	odpconfig        *utilities.ODPconfig
 	pinger           *Pingagent
 	detectoraddress  *net.UDPAddr
@@ -27,7 +27,7 @@ type ODPdetector struct {
 func CreateODPdetector(landscapeupdater *Landscapeupdater, serverconfig *utilities.ServerConfig) *ODPdetector {
 	odpdetector := new(ODPdetector)
 	odpdetector.landcsapeupdater = landscapeupdater
-	odpdetector.opinion = new(DetectorOpinion)
+	odpdetector.opinion = new(utilities.DetectorOpinion)
 	odpdetector.opinion.Aliveopinion = true //explicit
 	odpdetector.opinion.Dcid = ""           //explicit
 	odpdetector.odpconfig = &serverconfig.Odpconfig
@@ -40,8 +40,8 @@ func CreateODPdetector(landscapeupdater *Landscapeupdater, serverconfig *utiliti
 	return odpdetector
 }
 
-func (opdetector *ODPdetector) GetOpinion() *DetectorOpinion {
-	opinion := new(DetectorOpinion)
+func (opdetector *ODPdetector) GetOpinion() *utilities.DetectorOpinion {
+	opinion := new(utilities.DetectorOpinion)
 	odpmutex.Lock()
 	*opinion = *opdetector.opinion
 	odpmutex.Unlock()

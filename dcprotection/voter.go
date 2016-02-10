@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math"
 	"time"
+
+	"github.com/fithisux/orbit-dc-protector/utilities"
 )
 
 type Datacentergallop struct {
@@ -28,7 +30,7 @@ func VotingProc(urls []string, datacenter string, votingthreshold float64, votin
 	}
 	building := -1 //i know you are dead
 	answers := 0
-	opinion := new(DetectorOpinion)
+	opinion := new(utilities.DetectorOpinion)
 	index := 0
 
 	for resus := range responses {

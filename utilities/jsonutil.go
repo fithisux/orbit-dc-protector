@@ -32,9 +32,9 @@ import (
 	"github.com/fithisux/gopinger/pinglogic"
 )
 
-type OPDatacenter struct {
-	Dcid      string `bson:"datacenter_id"`
-	Operating bool   `bson:"datacenter_operating"`
+type DetectorOpinion struct {
+	Dcid         string `bson:"datacenter_id"`
+	Aliveopinion bool   `bson:"datacenter_operating"`
 }
 
 type OPRoute struct {

@@ -192,20 +192,20 @@ func (p *PersistencyLayer) GetRoute(dcid string) string {
 	return candidate.Dst
 }
 
-func (p *PersistencyLayer) GetDatacenterState(dcid string) bool {
+func (p *PersistencyLayer) GetDatacenterState(dcid string) *DetectorOpinion {
 	if dcid == "" {
-		return true
+		return &DetectorOpinion{"", true}
 	}
 	mySession := p.grabSession()
 	defer mySession.Close()
 	collection := mySession.DB(OrbitDatabase).C("datacenters")
-	var candidate OPDatacenter
+	var candidate DetectorOpinion
 	fmt.Println("find route from " + dcid)
 	if err := collection.Find(bson.M{"datacenter_id": dcid}).One(&candidate); err != nil {
 		panic("general error at GetDatacenterState " + err.Error())
 	}
 	//fmt.Printf("%#v\n",candidate)
-	return candidate.Operating
+	return &candidate
 }
 
 func (p *PersistencyLayer) SetDatacenterFailed(dcid string) {
