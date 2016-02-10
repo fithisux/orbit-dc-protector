@@ -51,7 +51,7 @@ func main() {
 	log.Printf("Registering")
 	ws := new(restful.WebService)
 	ws.Path("/odp").Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
-	ws.Route(ws.GET("/opinion").To(dcprotector_opinion)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
+	ws.Route(ws.GET("/opinion").To(dcprotector_opinion).Consumes(restful.MIME_JSON)).Produces(restful.MIME_JSON)
 	wsContainer.Add(ws)
 
 	// Add container filter to enable CORS

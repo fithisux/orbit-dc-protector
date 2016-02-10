@@ -28,7 +28,7 @@ func VotingProc(urls []string, datacenter string, votingthreshold float64, votin
 	}
 	building := -1 //i know you are dead
 	answers := 0
-	opinion := new(DetectorStatus)
+	opinion := new(DetectorOpinion)
 	index := 0
 
 	for resus := range responses {

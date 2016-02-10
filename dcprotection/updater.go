@@ -27,8 +27,13 @@ import (
 	"github.com/fithisux/orbit-dc-protector/utilities"
 )
 
+type DetectorOpinion struct {
+	Dcid         string
+	Aliveopinion bool
+}
+
 type DBView struct {
-	Dcid    string
+	DetectorOpinion
 	Me      *utilities.OPData
 	Pingers []utilities.OPData
 	Voters  []utilities.OPData
@@ -58,6 +63,7 @@ func CreateLandscapeupdater(conf *utilities.ServerConfig) *Landscapeupdater {
 					var pingers []utilities.OPData = nil
 					var voters []utilities.OPData = nil
 					dst := landscapeupdater.persistencylayer.GetRoute(landscapeupdater.opdata.Dcid)
+					operating := landscapeupdater.persistencylayer.GetDatacenterState(dst)
 					//fmt.Println("Got dst "+dst)
 					if dst != "" {
 						pingers = landscapeupdater.persistencylayer.GetODPPeers(dst)
@@ -72,7 +78,7 @@ func CreateLandscapeupdater(conf *utilities.ServerConfig) *Landscapeupdater {
 						}
 						voters = voters[:index]
 					}
-					landscapeupdater.Dbupdates <- &DBView{dst, landscapeupdater.opdata, pingers, voters}
+					landscapeupdater.Dbupdates <- &DBView{DetectorOpinion{dst, operating}, landscapeupdater.opdata, pingers, voters}
 					ticker = time.NewTicker(landscapeupdater.updateinterval)
 				}
 			}
