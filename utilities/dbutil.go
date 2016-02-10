@@ -210,7 +210,7 @@ func (p *PersistencyLayer) SetDatacenterFailed(dcid string) {
 	defer mySession.Close()
 	collection := mySession.DB(OrbitDatabase).C("datacenters")
 	fmt.Println("find route from " + dcid)
-	if err := collection.Update(bson.M{"datacenter_id": dcid}, bson.M{"datacenter_operating": false}); err != nil {
+	if err := collection.Update(bson.M{"datacenter_id": dcid}, bson.M{"$set": bson.M{"datacenter_operating": false}}); err != nil {
 		panic("general error at routes " + err.Error())
 	}
 }
