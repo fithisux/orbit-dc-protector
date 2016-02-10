@@ -200,7 +200,7 @@ func (p *PersistencyLayer) GetDatacenterState(dcid string) *DetectorOpinion {
 	defer mySession.Close()
 	collection := mySession.DB(OrbitDatabase).C("datacenters")
 	var candidate DetectorOpinion
-	fmt.Println("find route from " + dcid)
+	fmt.Println("find state of " + dcid)
 	if err := collection.Find(bson.M{"datacenter_id": dcid}).One(&candidate); err != nil {
 		panic("general error at GetDatacenterState " + err.Error())
 	}
@@ -215,7 +215,7 @@ func (p *PersistencyLayer) SetDatacenterFailed(dcid string) {
 	mySession := p.grabSession()
 	defer mySession.Close()
 	collection := mySession.DB(OrbitDatabase).C("datacenters")
-	fmt.Println("find route from " + dcid)
+	fmt.Println("make failed " + dcid)
 	if err := collection.Update(bson.M{"datacenter_id": dcid}, bson.M{"$set": bson.M{"datacenter_operating": false}}); err != nil {
 		panic("general error at SetDatacenterFailed " + err.Error())
 	}
