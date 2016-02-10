@@ -193,6 +193,9 @@ func (p *PersistencyLayer) GetRoute(dcid string) string {
 }
 
 func (p *PersistencyLayer) GetDatacenterState(dcid string) bool {
+	if dcid == "" {
+		return true
+	}
 	mySession := p.grabSession()
 	defer mySession.Close()
 	collection := mySession.DB(OrbitDatabase).C("datacenters")
@@ -206,6 +209,9 @@ func (p *PersistencyLayer) GetDatacenterState(dcid string) bool {
 }
 
 func (p *PersistencyLayer) SetDatacenterFailed(dcid string) {
+	if dcid == "" {
+		return
+	}
 	mySession := p.grabSession()
 	defer mySession.Close()
 	collection := mySession.DB(OrbitDatabase).C("datacenters")
