@@ -56,9 +56,12 @@ func (opdetector *ODPdetector) Run() {
 			odpmutex.Lock()
 			if opdetector.dbview == nil { //parked
 				if somedbview.Dcid != "" && somedbview.Aliveopinion {
+					fmt.Println("started")
 					opdetector.dbview = somedbview
 					*opdetector.opinion = somedbview.DetectorOpinion
 					pinger.updating_chan <- opdetector.dbview.Pingers
+				} else {
+					fmt.Println("still waiting")
 				}
 			} else {
 				if opdetector.dbview.DetectorOpinion == somedbview.DetectorOpinion {
