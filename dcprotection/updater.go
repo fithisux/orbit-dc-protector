@@ -64,7 +64,8 @@ func CreateLandscapeupdater(conf *utilities.ServerConfig) *Landscapeupdater {
 					var voters []utilities.OPData = nil
 					dst := landscapeupdater.persistencylayer.GetRoute(landscapeupdater.opdata.Dcid)
 					operating := landscapeupdater.persistencylayer.GetDatacenterState(dst)
-					//fmt.Println("Got dst "+dst)
+					fmt.Printf("Got dst %s \n", dst)
+					fmt.Println("Got operating %b \n", operating)
 					if dst != "" {
 						pingers = landscapeupdater.persistencylayer.GetODPPeers(dst)
 						resultset := landscapeupdater.persistencylayer.GetODPPeers(landscapeupdater.opdata.Dcid)
