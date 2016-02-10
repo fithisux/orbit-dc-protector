@@ -186,7 +186,7 @@ func (p *PersistencyLayer) GetRoute(dcid string) string {
 	var candidate OPRoute
 	fmt.Println("find route from " + dcid)
 	if err := collection.Find(bson.M{"route_odp_src": dcid}).One(&candidate); err != nil {
-		panic("general error at routes " + err.Error())
+		panic("general error at GetRoute " + err.Error())
 	}
 	//fmt.Printf("%#v\n",candidate)
 	return candidate.Dst
@@ -199,7 +199,7 @@ func (p *PersistencyLayer) GetDatacenterState(dcid string) bool {
 	var candidate OPDatacenter
 	fmt.Println("find route from " + dcid)
 	if err := collection.Find(bson.M{"datacenter_id": dcid}).One(&candidate); err != nil {
-		panic("general error at routes " + err.Error())
+		panic("general error at GetDatacenterState " + err.Error())
 	}
 	//fmt.Printf("%#v\n",candidate)
 	return candidate.Operating
@@ -211,6 +211,6 @@ func (p *PersistencyLayer) SetDatacenterFailed(dcid string) {
 	collection := mySession.DB(OrbitDatabase).C("datacenters")
 	fmt.Println("find route from " + dcid)
 	if err := collection.Update(bson.M{"datacenter_id": dcid}, bson.M{"$set": bson.M{"datacenter_operating": false}}); err != nil {
-		panic("general error at routes " + err.Error())
+		panic("general error at SetDatacenterFailed " + err.Error())
 	}
 }
