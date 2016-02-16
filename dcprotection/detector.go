@@ -22,10 +22,12 @@ type ODPdetector struct {
 	odpconfig        *utilities.ODPconfig
 	pinger           *Pingagent
 	detectoraddress  *net.UDPAddr
+	serverconfig     *utilities.ServerConfig
 }
 
 func CreateODPdetector(landscapeupdater *Landscapeupdater, serverconfig *utilities.ServerConfig) *ODPdetector {
 	odpdetector := new(ODPdetector)
+	odpdetector.serverconfig = serverconfig
 	odpdetector.landcsapeupdater = landscapeupdater
 	odpdetector.opinion = new(utilities.DetectorOpinion)
 	odpdetector.opinion.Aliveopinion = true //explicit
@@ -121,6 +123,14 @@ func (opdetector *ODPdetector) Run() {
 				if err != nil {
 					fmt.Println("Notified? " + err.Error())
 				}
+
+				dcdetection := new(utilities.DCDetection)
+				dcdetection.Reporter_ovip = opdetector.serverconfig.Opconfig.Odip
+				dcdetection.Reporter_dcid = opdetector.serverconfig.Opconfig.Dcid
+				dcdetection.Dcid = dcid
+				dcdetection.Timestamp = time.Now()
+				opdetector.landcsapeupdater.persistencylayer.InsertDCDetection(dcdetection)
+
 				odpmutex.Lock()
 				opdetector.dbview = nil
 				odpmutex.Unlock()

@@ -44,10 +44,24 @@ type DCMeasurments struct {
 	Votings                int
 }
 
+type DetectionReporter struct {
+	Reporter_ovip string `bson:"reporter_ovp_ip" json:"reporter_ovp_ip"`
+	Reporter_dcid string `bson:"reporter_ovp_dcid" json:"reporter_ovp_dcid"`
+}
+
 type VMDetection struct {
-	Vmid  string
-	Ovip  string
-	Epoch int
+	DetectionReporter `bson:",inline"`
+	Ovip              string    `bson:"watchdog_ovp_ip" json:"watchdog_ovp_ip"`
+	Dcid              string    `bson:"watchdog_ovp_dcid" json:"watchdog_ovp_dcid"`
+	Timestamp         time.Time `bson:"watchdog_timestamp" json:"watchdog_timestamp"`
+	Epoch             int       `bson:"watchdog_epoch" json:"watchdog_epoch"`
+	Vmid              []string  `bson:"watchdog_ovp_vmids" json:"watchdog_ovp_vmids"`
+}
+
+type DCDetection struct {
+	DetectionReporter `bson:",inline"`
+	Dcid              string    `bson:"watchdog_ovp_dcid" json:"watchdog_ovp_dcid"`
+	Timestamp         time.Time `bson:"watchdog_timestamp" json:"watchdog_timestamp"`
 }
 
 type VMMeasurments struct {

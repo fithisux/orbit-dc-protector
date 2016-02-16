@@ -220,3 +220,27 @@ func (p *PersistencyLayer) SetDatacenterFailed(dcid string) {
 		panic("general error at SetDatacenterFailed " + err.Error())
 	}
 }
+
+func (p *PersistencyLayer) InsertVMDetection(vmdetection *VMDetection) {
+	if vmdetection == nil {
+		return
+	}
+	mySession := p.grabSession()
+	defer mySession.Close()
+	collection := mySession.DB(OrbitDatabase).C("vmdetections")
+	if err := collection.Insert(vmdetection); err != nil {
+		panic("general error at InsertVMDetection " + err.Error())
+	}
+}
+
+func (p *PersistencyLayer) InsertDCDetection(dcdetection *DCDetection) {
+	if dcdetection == nil {
+		return
+	}
+	mySession := p.grabSession()
+	defer mySession.Close()
+	collection := mySession.DB(OrbitDatabase).C("dcdetections")
+	if err := collection.Insert(dcdetection); err != nil {
+		panic("general error at InsertDCDetection " + err.Error())
+	}
+}
