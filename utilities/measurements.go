@@ -55,6 +55,7 @@ type VMDetection struct {
 	Dcid              string    `bson:"watchdog_ovp_dcid" json:"watchdog_ovp_dcid"`
 	Timestamp         time.Time `bson:"watchdog_timestamp" json:"watchdog_timestamp"`
 	Epoch             int       `bson:"watchdog_epoch" json:"watchdog_epoch"`
+	Breakage          bool      `bson:"watchdog_breakage" json:"watchdog_breakage"`
 	Vmid              []string  `bson:"watchdog_ovp_vmids" json:"watchdog_ovp_vmids"`
 }
 
