@@ -23,6 +23,7 @@ type ODPdetector struct {
 	pinger           *Pingagent
 	detectoraddress  *net.UDPAddr
 	serverconfig     *utilities.ServerConfig
+	backcall         chan *pinglogic.Backcall
 }
 
 func CreateODPdetector(landscapeupdater *Landscapeupdater, serverconfig *utilities.ServerConfig) *ODPdetector {
@@ -37,7 +38,8 @@ func CreateODPdetector(landscapeupdater *Landscapeupdater, serverconfig *utiliti
 	if err != nil {
 		panic(err.Error())
 	}
-	go pinglogic.Passive(detectoraddress)
+	odpdetector.backcall = make(chan *pinglogic.Backcall)
+	go pinglogic.Passive(detectoraddress, odpdetector.backcall)
 	odpdetector.detectoraddress = detectoraddress
 	return odpdetector
 }
@@ -90,7 +92,7 @@ func (opdetector *ODPdetector) Run() {
 		}
 
 		startping := time.Now()
-		alive := pinger.isAlive()
+		alive := pinger.isAlive(opdetector.backcall)
 		elapsedping := time.Since(startping)
 		fmt.Printf("Elapsed ping : %s\n", elapsedping)
 

@@ -32,7 +32,7 @@ func CreatePingAgent(pingeraddress *net.UDPAddr, repinging time.Duration, conf *
 	return pingagent
 }
 
-func (pingagent *Pingagent) isAlive() bool {
+func (pingagent *Pingagent) isAlive(backcall chan *pinglogic.Backcall) bool {
 
 	var pingtargets []*net.UDPAddr
 	pingagentmutex.Lock()
@@ -40,7 +40,7 @@ func (pingagent *Pingagent) isAlive() bool {
 	pingagentmutex.Unlock()
 	if pingtargets != nil || len(pingtargets) > 0 {
 		fmt.Println("Liveness check")
-		_, ok := pinglogic.Active(pingagent.conf, pingagent.Pingeraddress, pingtargets)
+		_, ok := pinglogic.Active(pingagent.conf, backcall, pingagent.Pingeraddress, pingtargets)
 		return len(ok.Answers) != 0
 	} else {
 		return false
