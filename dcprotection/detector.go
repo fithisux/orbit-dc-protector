@@ -21,9 +21,9 @@ type ODPdetector struct {
 	opinion          *utilities.DetectorOpinion
 	odpconfig        *utilities.ODPconfig
 	pinger           *Pingagent
-	detectoraddress  *net.UDPAddr
 	serverconfig     *utilities.ServerConfig
-	backcall         chan *pinglogic.Backcall
+	pingconf         *pinglogic.PingConf
+	Backchannel      chan *pinglogic.Backcall
 }
 
 func CreateODPdetector(landscapeupdater *Landscapeupdater, serverconfig *utilities.ServerConfig) *ODPdetector {
@@ -34,13 +34,16 @@ func CreateODPdetector(landscapeupdater *Landscapeupdater, serverconfig *utiliti
 	odpdetector.opinion.Aliveopinion = true //explicit
 	odpdetector.opinion.Dcid = ""           //explicit
 	odpdetector.odpconfig = &serverconfig.Odpconfig
-	detectoraddress, err := net.ResolveUDPAddr("udp", serverconfig.Opconfig.Odip+":"+strconv.Itoa(serverconfig.Opconfig.Pingport))
-	if err != nil {
+	odpdetector.pingconf = new(pinglogic.PingConf)
+	if detectoraddress, err := net.ResolveUDPAddr("udp", serverconfig.Opconfig.Odip+":"+strconv.Itoa(serverconfig.Opconfig.Pingport)); err != nil {
 		panic(err.Error())
+	} else {
+		odpdetector.pingconf.Timingconf = &serverconfig.Odpconfig.Pingattempts
+		odpdetector.pingconf.Backaddress = detectoraddress
+		odpdetector.Backchannel = make(chan *pinglogic.Backcall)
+		odpdetector.pingconf.Backchannel = odpdetector.Backchannel
 	}
-	odpdetector.backcall = make(chan *pinglogic.Backcall)
-	go pinglogic.Passive(detectoraddress, odpdetector.backcall)
-	odpdetector.detectoraddress = detectoraddress
+	go pinglogic.Passive(odpdetector.pingconf.Backaddress, odpdetector.Backchannel)
 	return odpdetector
 }
 
@@ -53,7 +56,7 @@ func (opdetector *ODPdetector) GetOpinion() *utilities.DetectorOpinion {
 }
 
 func (opdetector *ODPdetector) Run() {
-	pinger := CreatePingAgent(opdetector.detectoraddress, opdetector.odpconfig.Repinginterval, &opdetector.odpconfig.Pingattempts)
+	pinger := CreatePingAgent(opdetector.pingconf)
 
 	go func() {
 		for somedbview := range opdetector.landcsapeupdater.Dbupdates {
@@ -92,7 +95,7 @@ func (opdetector *ODPdetector) Run() {
 		}
 
 		startping := time.Now()
-		alive := pinger.isAlive(opdetector.backcall)
+		alive := pinger.isAlive()
 		elapsedping := time.Since(startping)
 		fmt.Printf("Elapsed ping : %s\n", elapsedping)
 

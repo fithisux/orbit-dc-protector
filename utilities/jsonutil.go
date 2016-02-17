@@ -70,7 +70,6 @@ func (o *OPData) Name() string {
 type ODPconfig struct {
 	Pingattempts            pinglogic.TimedAttempts `json:"pingattempts"`
 	Landscapeupdateinterval time.Duration           `json:"updateinterval"`
-	Repinginterval          time.Duration           `json:"repinginterval"`
 	Votingtimeout           time.Duration           `json:"votingtimeout"`
 	Votingthreshold         float64                 `json:"votingthreshold"`
 }
@@ -126,10 +125,6 @@ func validateJson(content []byte) (*ServerConfig, error) {
 		return nil, errors.New("option : Votinginterval is a positive integer.")
 	}
 
-	if data.Odpconfig.Repinginterval <= 0 {
-		return nil, errors.New("option : Repinginterval is a positive integer.")
-	}
-
 	if data.Odpconfig.Pingattempts.Retries <= 0 {
 		return nil, errors.New("option : Retries is a positive integer.")
 	}
@@ -143,7 +138,6 @@ func validateJson(content []byte) (*ServerConfig, error) {
 	}
 
 	data.Odpconfig.Landscapeupdateinterval *= time.Millisecond
-	data.Odpconfig.Repinginterval *= time.Millisecond
 	data.Odpconfig.Votingtimeout *= time.Millisecond
 	data.Odpconfig.Pingattempts.Timeout *= time.Millisecond
 	data.Ovpconfig.Refreshattempts.Timeout *= time.Millisecond

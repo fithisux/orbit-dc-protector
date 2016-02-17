@@ -5,7 +5,6 @@ import (
 	"net"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/fithisux/gopinger/pinglogic"
 	"github.com/fithisux/orbit-dc-protector/utilities"
@@ -13,34 +12,31 @@ import (
 
 type Pingagent struct {
 	updating_chan chan []utilities.OPData
-	Pingeraddress *net.UDPAddr
-	conf          *pinglogic.TimedAttempts
-	Repinging     time.Duration
+	pingconf      *pinglogic.PingConf
 	pingtargets   []*net.UDPAddr
 }
 
 var pingagentmutex sync.Mutex
 
-func CreatePingAgent(pingeraddress *net.UDPAddr, repinging time.Duration, conf *pinglogic.TimedAttempts) *Pingagent {
+func CreatePingAgent(pingconf *pinglogic.PingConf) *Pingagent {
 	pingagent := new(Pingagent)
 	pingagent.pingtargets = nil
-	pingagent.Pingeraddress = pingeraddress
+	pingagent.pingconf = pingconf
 	pingagent.updating_chan = make(chan []utilities.OPData)
-	pingagent.conf = conf
-	pingagent.Repinging = repinging
 	go ping_them(pingagent)
 	return pingagent
 }
 
-func (pingagent *Pingagent) isAlive(backcall chan *pinglogic.Backcall) bool {
+func (pingagent *Pingagent) isAlive() bool {
 
 	var pingtargets []*net.UDPAddr
 	pingagentmutex.Lock()
 	pingtargets = pingagent.pingtargets
 	pingagentmutex.Unlock()
+
 	if pingtargets != nil || len(pingtargets) > 0 {
 		fmt.Println("Liveness check")
-		_, ok := pinglogic.Active(pingagent.conf, backcall, pingagent.Pingeraddress, pingtargets)
+		_, ok := pinglogic.Active(pingagent.pingconf, pingtargets)
 		return len(ok.Answers) != 0
 	} else {
 		return false
