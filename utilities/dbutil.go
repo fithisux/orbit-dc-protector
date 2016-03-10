@@ -94,7 +94,7 @@ func (p *PersistencyLayer) Describe(opconfig *OPConfig) *OPData {
 	}
 }
 
-func (p *PersistencyLayer) InitializeOVP(opconfig *OPConfig) *OPData {
+func (p *PersistencyLayer) Initialize(opconfig *OPConfig) *OPData {
 	fmt.Println("searching for ovp watchdog in " + OrbitDatabase)
 	mySession := p.grabSession()
 	defer mySession.Close()
@@ -119,15 +119,6 @@ func (p *PersistencyLayer) InitializeOVP(opconfig *OPConfig) *OPData {
 		}
 	}
 	return opdata
-}
-
-func (p *PersistencyLayer) InitializeODP(opconfig *OPConfig) *OPData {
-	if ovpdata := p.Describe(opconfig); ovpdata != nil {
-		return ovpdata
-	} else {
-		panic("Cannot find odp watchdog")
-	}
-	return nil
 }
 
 func (p *PersistencyLayer) GetOVPPeers(bound int, opconfig *OPConfig) []OPData {

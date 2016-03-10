@@ -44,7 +44,7 @@ type Landscapeupdater struct {
 func CreateLandscapeupdater(conf *utilities.ServerConfig) *Landscapeupdater {
 	landscapeupdater := new(Landscapeupdater)
 	landscapeupdater.persistencylayer = utilities.CreatePersistencyLayer(&conf.Dbconfig)
-	landscapeupdater.opdata = landscapeupdater.persistencylayer.InitializeODP(&conf.Opconfig)
+	landscapeupdater.opdata = landscapeupdater.persistencylayer.Initialize(&conf.Opconfig)
 	landscapeupdater.updateinterval = conf.Odpconfig.Landscapeupdateinterval
 	landscapeupdater.Dbupdates = make(chan *DBView)
 
