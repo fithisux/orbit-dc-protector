@@ -142,6 +142,7 @@ func (opdetector *ODPdetector) Run() {
 				opdetector.landcsapeupdater.persistencylayer.SetDatacenterFailed(opdetector.opinion.Dcid)
 				_, elapsedsuspicion := suspicion.Converged()
 				fmt.Printf("Elapsed suspicion : %s\n", elapsedsuspicion)
+				suspicion = utilities.Createdcsuspicion()
 			} else {
 				fmt.Println("We are undecided")
 				continue //undecided
